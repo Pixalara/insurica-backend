@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import LogoutButton from '../../components/LogoutButton'
 
 export default function DashboardLayout({
   children,
@@ -8,7 +9,7 @@ export default function DashboardLayout({
   return (
     <div className="flex min-h-screen bg-slate-50">
       {/* Premium Sidebar */}
-      <aside className="w-64 bg-slate-900 text-white p-6 flex flex-col fixed h-full">
+      <aside className="w-64 bg-slate-900 text-white p-6 flex flex-col fixed h-full shadow-2xl">
         <div className="mb-10">
           <h2 className="text-2xl font-bold tracking-tighter text-blue-400">Insurica.</h2>
           <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">
@@ -28,6 +29,11 @@ export default function DashboardLayout({
           </Link>
         </nav>
 
+        {/* Logout Option integrated here */}
+        <div className="mt-auto pb-4">
+          <LogoutButton />
+        </div>
+
         <div className="border-t border-slate-800 pt-6">
           <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-[0.2em]">
             Digital Experiences.
@@ -35,7 +41,7 @@ export default function DashboardLayout({
           <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-[0.2em]">
             Engineered to Scale.
           </p>
-          <p className="text-xs text-blue-400 mt-2 font-bold">Pixalara.com</p>
+          <p className="text-xs text-blue-400 mt-2 font-bold italic">Pixalara.com</p>
         </div>
       </aside>
 
