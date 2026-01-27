@@ -7,21 +7,40 @@ export default function DashboardLayout({
 }) {
   return (
     <div className="flex min-h-screen bg-slate-50">
-      {/* Sidebar */}
-      <aside className="w-64 bg-slate-900 text-white p-6 flex flex-col">
-        <h2 className="text-xl font-bold text-blue-400 mb-8">Insurica Admin</h2>
+      {/* Premium Sidebar */}
+      <aside className="w-64 bg-slate-900 text-white p-6 flex flex-col fixed h-full">
+        <div className="mb-10">
+          <h2 className="text-2xl font-bold tracking-tighter text-blue-400">Insurica.</h2>
+          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">
+            Admin Portal
+          </p>
+        </div>
+        
         <nav className="flex-1 space-y-2">
-          <Link href="/dashboard" className="block p-2 hover:bg-slate-800 rounded">Overview</Link>
-          <Link href="/dashboard/clients" className="block p-2 hover:bg-slate-800 rounded">Clients</Link>
-          <Link href="/dashboard/policies" className="block p-2 hover:bg-slate-800 rounded">Policies</Link>
+          <Link href="/dashboard" className="block p-3 hover:bg-slate-800 rounded-xl transition-colors font-medium">
+            Overview
+          </Link>
+          <Link href="/dashboard/clients" className="block p-3 hover:bg-slate-800 rounded-xl transition-colors font-medium">
+            Clients
+          </Link>
+          <Link href="/dashboard/policies" className="block p-3 hover:bg-slate-800 rounded-xl transition-colors font-medium">
+            Policies
+          </Link>
         </nav>
-        <div className="border-t border-slate-700 pt-4">
-          <p className="text-xs text-slate-400">Powered by Pixalara</p>
+
+        <div className="border-t border-slate-800 pt-6">
+          <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-[0.2em]">
+            Digital Experiences.
+          </p>
+          <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-[0.2em]">
+            Engineered to Scale.
+          </p>
+          <p className="text-xs text-blue-400 mt-2 font-bold">Pixalara.com</p>
         </div>
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 p-8">
+      <main className="flex-1 ml-64 p-10">
         {children}
       </main>
     </div>
