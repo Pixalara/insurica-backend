@@ -24,6 +24,12 @@ export default function DashboardLayout({
           <Link href="/dashboard/clients" className="block p-3 hover:bg-slate-800 rounded-xl transition-colors font-medium">
             Clients
           </Link>
+          <Link href="/dashboard/general" className="block p-3 hover:bg-slate-800 rounded-xl transition-colors font-medium">
+            General
+          </Link>
+          <Link href="/dashboard/health" className="block p-3 hover:bg-slate-800 rounded-xl transition-colors font-medium">
+            Health
+          </Link>
           <Link href="/dashboard/policies" className="block p-3 hover:bg-slate-800 rounded-xl transition-colors font-medium">
             Policies
           </Link>
