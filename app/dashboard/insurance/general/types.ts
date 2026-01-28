@@ -8,5 +8,6 @@ export interface GeneralPolicy {
   startDate: string // ISO date string
   endDate: string // ISO date string
   amountPaid: number
+  sumInsured: number
   status: 'Active' | 'Expired' | 'Pending'
 }

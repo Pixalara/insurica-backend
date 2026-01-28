@@ -1,27 +1,38 @@
-import { createClient } from '@/utils/supabase/server'
+'use client'
+
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { ClientStats } from './_components/client-stats'
-import { ClientGrid } from './_components/client-grid'
+import { ClientTable } from './_components/client-table'
+import { Client } from './types'
+import { ClientStorage } from './client-storage'
 
 /**
  * Insurica Client Directory
  * Displays all clients managed by the authenticated agent.
  */
-export default async function ClientsPage() {
-  // Initialize the async Supabase client for Next.js 16
-  const supabase = await createClient()
+export default function ClientsPage() {
+  const [clients, setClients] = useState<Client[]>([])
+  const [loading, setLoading] = useState(true)
 
-  // Fetch clients from your Supabase Project ID: qlaslhiuacihctyhfzuk
-  const { data: clients, error } = await supabase
-    .from('clients')
-    .select('*')
-    .order('created_at', { ascending: false })
+  useEffect(() => {
+    // Load clients from local storage on mount
+    const loadClients = () => {
+      const data = ClientStorage.getClients()
+      setClients(data)
+      setLoading(false)
+    }
 
-  if (error) {
-    console.error('Error loading clients:', error.message)
+    loadClients()
+
+    // Listen for storage events to sync across tabs/windows if needed
+    window.addEventListener('storage', loadClients)
+    return () => window.removeEventListener('storage', loadClients)
+  }, [])
+
+  if (loading) {
+    return <div className="p-10 text-center text-slate-500">Loading clients...</div>
   }
-
-  const clientList = clients || []
 
   return (
     <div className="space-y-8">
@@ -38,9 +49,9 @@ export default async function ClientsPage() {
         </Link>
       </div>
 
-      <ClientStats totalClients={clientList.length} />
+      <ClientStats totalClients={clients.length} />
 
-      <ClientGrid clients={clientList} />
+      <ClientTable clients={clients} onRefresh={() => setClients(ClientStorage.getClients())} />
     </div>
   )
 }

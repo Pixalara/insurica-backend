@@ -16,7 +16,7 @@ const formatCurrency = (value: number) =>
 
 export function RevenuePieChart() {
     return (
-        <div className="w-full h-full flex flex-col">
+        <div className="h-[400px] w-full bg-white p-4 rounded-xl border border-slate-200 flex flex-col">
             <h3 className="text-lg font-bold text-slate-800 mb-4 px-2">Revenue Distribution</h3>
             <div className="flex-1 min-h-0">
                 <ResponsiveContainer width="100%" height="100%">

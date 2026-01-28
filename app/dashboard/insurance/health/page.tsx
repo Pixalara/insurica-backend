@@ -1,5 +1,9 @@
+'use client'
+
+import React, { useState } from 'react'
 import Link from 'next/link'
-import { HealthGrid } from './_components/health-grid'
+import { Search } from 'lucide-react'
+import { HealthTable } from './_components/health-table'
 import { HealthPolicy } from './types'
 
 // Mock Data for demonstration
@@ -71,22 +75,46 @@ const MOCK_POLICIES: HealthPolicy[] = [
 ]
 
 export default function HealthInsurancePage() {
+    const [policies, setPolicies] = useState<HealthPolicy[]>(MOCK_POLICIES)
+    const [searchQuery, setSearchQuery] = useState('')
+
+    const filteredPolicies = policies.filter(policy =>
+        policy.holderName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        policy.planType.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        policy.policyNumber.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+
     return (
-        <div className="space-y-8">
+        <div className="space-y-6">
             <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900">Health Insurance</h1>
                     <p className="text-slate-500 text-sm">Manage health policies, renewal dates, and claims.</p>
                 </div>
                 <Link
-                    href="/dashboard/health/new"
+                    href="/dashboard/insurance/health/new"
                     className="bg-blue-600 text-white px-5 py-2.5 rounded-lg font-medium hover:bg-blue-700 transition-all shadow-sm hover:shadow active:scale-95 flex items-center justify-center gap-2"
                 >
                     <span>+ New Health Policy</span>
                 </Link>
             </div>
 
-            <HealthGrid policies={MOCK_POLICIES} />
+            {/* Search Bar */}
+            <div className="relative w-full md:w-1/3">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                <input
+                    type="text"
+                    placeholder="Search by name, policy number, or plan type..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium placeholder:text-slate-400"
+                />
+            </div>
+
+            <HealthTable
+                policies={filteredPolicies}
+                onDelete={(id) => setPolicies(policies.filter(p => p.id !== id))}
+            />
         </div>
     )
 }

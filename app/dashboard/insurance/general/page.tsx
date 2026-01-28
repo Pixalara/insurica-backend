@@ -1,5 +1,9 @@
+'use client'
+
+import { useState } from 'react'
 import Link from 'next/link'
-import { InsuranceGrid } from './_components/insurance-grid'
+import { Search } from 'lucide-react'
+import { GeneralTable } from './_components/general-table'
 import { GeneralPolicy } from './types'
 
 // Mock Data for demonstration
@@ -14,6 +18,7 @@ const MOCK_POLICIES: GeneralPolicy[] = [
         startDate: '2024-01-15',
         endDate: '2025-01-14',
         amountPaid: 15000,
+        sumInsured: 500000,
         status: 'Active'
     },
     {
@@ -26,6 +31,7 @@ const MOCK_POLICIES: GeneralPolicy[] = [
         startDate: '2023-11-20',
         endDate: '2024-11-19',
         amountPaid: 8500,
+        sumInsured: 300000,
         status: 'Active'
     },
     {
@@ -38,6 +44,7 @@ const MOCK_POLICIES: GeneralPolicy[] = [
         startDate: '2023-12-01',
         endDate: '2023-12-15',
         amountPaid: 2500,
+        sumInsured: 100000,
         status: 'Expired'
     },
     {
@@ -50,27 +57,52 @@ const MOCK_POLICIES: GeneralPolicy[] = [
         startDate: '2024-02-01',
         endDate: '2025-01-31',
         amountPaid: 22000,
+        sumInsured: 750000,
         status: 'Active'
     }
 ]
 
 export default function GeneralInsurancePage() {
+    const [policies, setPolicies] = useState<GeneralPolicy[]>(MOCK_POLICIES)
+    const [searchQuery, setSearchQuery] = useState('')
+
+    const filteredPolicies = policies.filter(policy =>
+        policy.holderName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        policy.type.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        policy.policyNumber.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+
     return (
-        <div className="space-y-8">
+        <div className="space-y-6">
             <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900">General Insurance</h1>
                     <p className="text-slate-500 text-sm">Manage health, motor, and other general insurance policies.</p>
                 </div>
                 <Link
-                    href="/dashboard/general/new"
+                    href="/dashboard/insurance/general/new"
                     className="bg-blue-600 text-white px-5 py-2.5 rounded-lg font-medium hover:bg-blue-700 transition-all shadow-sm hover:shadow active:scale-95 flex items-center justify-center gap-2"
                 >
                     <span>+ New Policy</span>
                 </Link>
             </div>
 
-            <InsuranceGrid policies={MOCK_POLICIES} />
+            {/* Search Bar */}
+            <div className="relative w-full md:w-1/3">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                <input
+                    type="text"
+                    placeholder="Search by name, policy number, or type..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium placeholder:text-slate-400"
+                />
+            </div>
+
+            <GeneralTable
+                policies={filteredPolicies}
+                onDelete={(id) => setPolicies(policies.filter(p => p.id !== id))}
+            />
         </div>
     )
 }
