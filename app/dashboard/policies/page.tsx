@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { Monitor, Heart, Filter, Search, Edit, Eye, Plus } from 'lucide-react'
 
-// Unified policy type for display purposes
+// Unified policy type for display 
 type UnifiedPolicy = {
     id: string
     category: 'Health' | 'General'
