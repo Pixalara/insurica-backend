@@ -11,6 +11,6 @@
 }
 
 body {
-  color: var(--foreground);
+  color: var(--background);
   scroll-behavior: smooth;
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { ArrowLeft, Phone, Mail, Calendar, Info, Heart, Shield, Users, Activity, CheckCircle, AlertTriangle } from 'lucide-react'
+import { ArrowLeft, Phone, Mail, Info, Heart, Users, Activity, CheckCircle, AlertTriangle } from 'lucide-react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 
@@ -131,7 +131,7 @@ export default function HealthPolicyDetailsPage() {
                                 <Heart className="w-3 h-3" /> {policy.planType}
                             </span>
                             <span className={`px-2 py-0.5 rounded text-xs font-medium border flex items-center gap-1 ${isActive ? 'bg-green-50 text-green-700 border-green-200' :
-                                    policy.status === 'Grace Period' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' : 'bg-slate-50 text-slate-600 border-slate-200'
+                                policy.status === 'Grace Period' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' : 'bg-slate-50 text-slate-600 border-slate-200'
                                 }`}>
                                 {isActive ? <CheckCircle className="w-3 h-3" /> : <AlertTriangle className="w-3 h-3" />}
                                 {policy.status}

@@ -1,11 +1,16 @@
+"use client"
 import Link from 'next/link'
-import LogoutButton from '../../components/LogoutButton'
+import { useState } from 'react';
+import LogoutButton from '../../components/ui/LogoutButton'
+
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const [openInsurance, setOpenInsurance] = useState(false);
+
   return (
     <div className="flex min-h-screen bg-slate-50">
       {/* Premium Sidebar */}
@@ -16,22 +21,71 @@ export default function DashboardLayout({
             Admin Portal
           </p>
         </div>
-        
+
         <nav className="flex-1 space-y-2">
-          <Link href="/dashboard" className="block p-3 hover:bg-slate-800 rounded-xl transition-colors font-medium">
+          {/* Overview */}
+          <Link
+            href="/dashboard"
+            className="block p-3 hover:bg-slate-800 rounded-xl transition-colors font-medium cursor-pointer select-none"
+          >
             Overview
           </Link>
-          <Link href="/dashboard/clients" className="block p-3 hover:bg-slate-800 rounded-xl transition-colors font-medium">
+
+          {/* Clients */}
+          <Link
+            href="/dashboard/clients"
+            className="block p-3 hover:bg-slate-800 rounded-xl transition-colors font-medium cursor-pointer select-none"
+          >
             Clients
           </Link>
-          <Link href="/dashboard/general" className="block p-3 hover:bg-slate-800 rounded-xl transition-colors font-medium">
-            General
-          </Link>
-          <Link href="/dashboard/health" className="block p-3 hover:bg-slate-800 rounded-xl transition-colors font-medium">
-            Health
-          </Link>
-          <Link href="/dashboard/policies" className="block p-3 hover:bg-slate-800 rounded-xl transition-colors font-medium">
-            Policies
+
+          {/* Insurance Dropdown */}
+          <div>
+            <button
+              onClick={() => setOpenInsurance(!openInsurance)}
+              className="w-full flex justify-between items-center p-3 hover:bg-slate-800 rounded-xl transition-colors font-medium cursor-pointer select-none"
+            >
+              Insurance
+              <span
+                className={`transition-transform ${openInsurance ? "rotate-180" : ""
+                  }`}
+              >
+                ▼
+              </span>
+            </button>
+
+            {openInsurance && (
+              <div className="ml-4 mt-2 space-y-1">
+                <Link
+                  href="/dashboard/insurance/general"
+                  className="block p-2 hover:bg-slate-800 rounded-lg transition-colors text-sm cursor-pointer select-none"
+                >
+                  General Insurance
+                </Link>
+
+                <Link
+                  href="/dashboard/insurance/health"
+                  className="block p-2 hover:bg-slate-800 rounded-lg transition-colors text-sm cursor-pointer select-none"
+                >
+                  Health Insurance
+                </Link>
+
+                <Link
+                  href="/dashboard/insurance/life"
+                  className="block p-2 hover:bg-slate-800 rounded-lg transition-colors text-sm cursor-pointer select-none"
+                >
+                  Life Insurance
+                </Link>
+              </div>
+            )}
+          </div>
+
+          {/* Lead Management */}
+          <Link
+            href="/dashboard/leads"
+            className="block p-3 hover:bg-slate-800 rounded-xl transition-colors font-medium cursor-pointer select-none"
+          >
+            Lead Management
           </Link>
         </nav>
 

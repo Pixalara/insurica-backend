@@ -27,15 +27,7 @@ export function HealthCard({ policy }: HealthCardProps) {
         })
     }
 
-    const getTypeColor = (type: string) => {
-        switch (type) {
-            case 'Individual': return 'text-purple-600 bg-purple-50'
-            case 'Family Floater': return 'text-pink-600 bg-pink-50'
-            case 'Senior Citizen': return 'text-orange-600 bg-orange-50'
-            case 'Critical Illness': return 'text-red-600 bg-red-50'
-            default: return 'text-blue-600 bg-blue-50'
-        }
-    }
+ 
 
     return (
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 hover:shadow-md transition-all group relative overflow-hidden">
@@ -46,9 +38,6 @@ export function HealthCard({ policy }: HealthCardProps) {
             </div>
 
             <div className="flex items-start gap-4 mb-4">
-                <div className={`p-3 rounded-lg ${getTypeColor(policy.planType)}`}>
-                    <Heart className="w-6 h-6" />
-                </div>
                 <div>
                     <h3 className="text-lg font-bold text-slate-900 leading-tight mb-1">{policy.holderName}</h3>
                     <p className="text-xs text-slate-500 font-medium bg-slate-100 px-2 py-0.5 rounded inline-block">
