@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import Link from 'next/link'
 import { GeneralPolicy } from '../types'
 import { Pencil, Trash2 } from 'lucide-react'
 
@@ -58,12 +59,13 @@ export function GeneralTable({ policies, onDelete }: GeneralTableProps) {
                             </td>
                             <td className="px-4 py-3 text-right">
                                 <div className="flex items-center justify-end gap-2">
-                                    <button
+                                    <Link
+                                        href={`/dashboard/insurance/general/${policy.id}/edit`}
                                         className="p-1.5 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
                                         title="Edit"
                                     >
                                         <Pencil size={16} />
-                                    </button>
+                                    </Link>
                                     <button
                                         onClick={() => setConfirmDeleteId(policy.id)}
                                         className="p-1.5 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"

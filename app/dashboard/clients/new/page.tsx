@@ -22,11 +22,8 @@ const INSURANCE_COMPANIES = [
 
 const PRODUCT_TYPES = [
   'Life Insurance',
-  'Health Insurance',
   'General Insurance',
-  'Motor Insurance',
-  'Term Plan',
-  'Travel Insurance'
+  'Health Insurance'
 ]
 
 export default function NewClientPage() {

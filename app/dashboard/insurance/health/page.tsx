@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Search } from 'lucide-react'
 import { HealthTable } from './_components/health-table'
@@ -78,6 +78,37 @@ export default function HealthInsurancePage() {
     const [policies, setPolicies] = useState<HealthPolicy[]>(MOCK_POLICIES)
     const [searchQuery, setSearchQuery] = useState('')
 
+    // Load clients from storage and merge
+    useEffect(() => {
+        import('../../clients/client-storage').then(({ ClientStorage }) => {
+            const clients = ClientStorage.getClients()
+            const healthClients = clients
+                .filter(c => c.productType === 'Health Insurance')
+                .map(c => ({
+                    id: c.id,
+                    policyNumber: `HI-${c.id.substring(0, 8).toUpperCase()}`,
+                    holderName: c.name,
+                    contactNumber: c.phone,
+                    email: c.email,
+                    planType: 'Individual' as const,
+                    sumInsured: 500000,
+                    premiumAmount: 12000,
+                    startDate: c.created_at || new Date().toISOString(),
+                    endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString(),
+                    renewalDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString(),
+                    membersCovered: 1,
+                    status: (c.policyStatus as any) || 'Active',
+                    insurer: c.insurer || 'Star Health'
+                } as HealthPolicy))
+
+            setPolicies(prev => {
+                const existingIds = new Set(MOCK_POLICIES.map(p => p.id))
+                const newClients = healthClients.filter(c => !existingIds.has(c.id))
+                return [...MOCK_POLICIES, ...newClients]
+            })
+        })
+    }, [])
+
     const filteredPolicies = policies.filter(policy =>
         policy.holderName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         policy.planType.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -91,12 +122,7 @@ export default function HealthInsurancePage() {
                     <h1 className="text-2xl font-bold text-slate-900">Health Insurance</h1>
                     <p className="text-slate-500 text-sm">Manage health policies, renewal dates, and claims.</p>
                 </div>
-                <Link
-                    href="/dashboard/insurance/health/new"
-                    className="bg-blue-600 text-white px-5 py-2.5 rounded-lg font-medium hover:bg-blue-700 transition-all shadow-sm hover:shadow active:scale-95 flex items-center justify-center gap-2"
-                >
-                    <span>+ New Health Policy</span>
-                </Link>
+
             </div>
 
             {/* Search Bar */}
