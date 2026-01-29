@@ -1,52 +1,28 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { Client } from '../types'
-import { createClient } from '@/utils/supabase/client'
+import { deleteClient } from '../actions'
 import { Pencil, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface ClientTableProps {
     clients: Client[]
-    onRefresh?: () => void
 }
 
-export function ClientTable({ clients: initialClients, onRefresh }: ClientTableProps) {
-    const [clients, setClients] = useState(initialClients)
+export function ClientTable({ clients }: ClientTableProps) {
     const [deletingId, setDeletingId] = useState<string | null>(null)
     const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
-    const router = useRouter()
-
-    // Internal state sync
-    useEffect(() => {
-        setClients(initialClients)
-    }, [initialClients])
 
     const handleDelete = async (id: string) => {
-        setConfirmDeleteId(null) // Close modal
+        setConfirmDeleteId(null)
         setDeletingId(id)
         const toastId = toast.loading('Deleting client...')
 
         try {
-            // Local Storage Delete
-            const { ClientStorage } = await import('../client-storage')
-            ClientStorage.deleteClient(id)
-
-            /* Backend Code (Commented out)
-            const { error } = await supabase.from('clients').delete().eq('id', id)
-            if (error) throw error
-            */
-
+            await deleteClient(id)
             toast.success('Client deleted successfully', { id: toastId })
-
-            if (onRefresh) {
-                onRefresh()
-            } else {
-                setClients((prev) => prev.filter((c) => c.id !== id))
-                router.refresh()
-            }
         } catch (error: any) {
             console.error('Delete error:', error)
             toast.error(error.message || 'Failed to delete client', { id: toastId })
@@ -64,15 +40,6 @@ export function ClientTable({ clients: initialClients, onRefresh }: ClientTableP
         )
     }
 
-    const getStatusStyle = (status?: string) => {
-        switch (status) {
-            case 'Active': return 'bg-green-100 text-green-700'
-            case 'Inactive': return 'bg-gray-100 text-gray-700'
-            case 'Expired': return 'bg-red-100 text-red-700'
-            default: return 'bg-blue-100 text-blue-700'
-        }
-    }
-
     return (
         <>
             <div className="overflow-x-auto border border-slate-200 rounded-lg shadow-sm">
@@ -82,16 +49,22 @@ export function ClientTable({ clients: initialClients, onRefresh }: ClientTableP
                             <th className="px-4 py-3">Client Name</th>
                             <th className="px-4 py-3">Contact Details</th>
                             <th className="px-4 py-3">Policy Status</th>
-                            <th className="px-4 py-3">Product Type</th>
+                            <th className="px-4 py-3">Category</th>
                             <th className="px-4 py-3">Insurer</th>
                             <th className="px-4 py-3 text-right">Actions</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200 bg-white">
                         {clients.map((client) => {
-                            const displayStatus = client.policyStatus || 'Active'
-                            const displayProduct = client.productType || 'Health Insurance'
-                            const displayInsurer = client.insurer || 'Start Health'
+                            let displayInsurer = 'N/A'
+                            if (client.companies) {
+                                if (Array.isArray(client.companies) && client.companies.length > 0) {
+                                    displayInsurer = client.companies[0].name
+                                } else if (!Array.isArray(client.companies)) {
+                                     // @ts-ignore
+                                    displayInsurer = client.companies.name
+                                }
+                            }
 
                             // Generate initials
                             const initials = client.name
@@ -116,18 +89,20 @@ export function ClientTable({ clients: initialClients, onRefresh }: ClientTableP
                                     </td>
                                     <td className="px-4 py-4">
                                         <div className="text-sm text-slate-700 font-medium">{client.phone || 'No Phone'}</div>
-                                        <div className="text-xs text-slate-500">{client.city || 'Location N/A'}</div>
+                                        <div className="text-xs text-slate-500">{client.policy_number}</div>
                                     </td>
                                     <td className="px-4 py-4">
-                                        <span className={`inline-flex px-2.5 py-1 text-xs font-semibold rounded-full border ${displayStatus === 'Active' ? 'bg-green-50 text-green-700 border-green-200' :
-                                                displayStatus === 'Expired' ? 'bg-red-50 text-red-700 border-red-200' :
-                                                    'bg-slate-100 text-slate-700 border-slate-200'
-                                            }`}>
-                                            {displayStatus}
+                                        <span className={`inline-flex px-2.5 py-1 text-xs font-semibold rounded-full border ${
+                                            client.status === 'Active' ? 'bg-green-50 text-green-700 border-green-200' :
+                                            client.status === 'Expired' ? 'bg-red-50 text-red-700 border-red-200' :
+                                            'bg-slate-100 text-slate-700 border-slate-200'
+                                        }`}>
+                                            {client.status || 'Active'}
                                         </span>
                                     </td>
                                     <td className="px-4 py-4">
-                                        <div className="text-sm text-slate-700">{displayProduct}</div>
+                                        <div className="text-sm text-slate-700 font-medium">{client.product_name || 'N/A'}</div>
+                                        <div className="text-xs text-slate-500">{client.category}</div>
                                     </td>
                                     <td className="px-4 py-4">
                                         <div className="flex items-center gap-2">

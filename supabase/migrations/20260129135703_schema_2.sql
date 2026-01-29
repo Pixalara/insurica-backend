@@ -9,7 +9,13 @@ EXCEPTION
 END $$;
 
 DO $$ BEGIN
-    CREATE TYPE public.policy_category AS ENUM ('Life', 'Health', 'General');
+    CREATE TYPE public.company_type AS ENUM ('General', 'Health', 'Life');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+    CREATE TYPE public.policy_category AS ENUM ('General', 'Health', 'Life');
 EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;
@@ -35,6 +41,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 CREATE TABLE IF NOT EXISTS public.companies (
     id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     name text NOT NULL,
+    type public.company_type,
     created_at timestamptz DEFAULT timezone('utc', now()),
     updated_at timestamptz DEFAULT timezone('utc', now())
 );
