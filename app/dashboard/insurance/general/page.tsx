@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Search } from 'lucide-react'
 import { GeneralTable } from './_components/general-table'
@@ -66,6 +66,34 @@ export default function GeneralInsurancePage() {
     const [policies, setPolicies] = useState<GeneralPolicy[]>(MOCK_POLICIES)
     const [searchQuery, setSearchQuery] = useState('')
 
+    // Load clients from storage and merge
+    useEffect(() => {
+        import('../../clients/client-storage').then(({ ClientStorage }) => {
+            const clients = ClientStorage.getClients()
+            const generalClients = clients
+                .filter(c => c.productType === 'General Insurance')
+                .map(c => ({
+                    id: c.id,
+                    policyNumber: `GI-${c.id.substring(0, 8).toUpperCase()}`,
+                    holderName: c.name,
+                    contactNumber: c.phone,
+                    email: c.email,
+                    type: 'Health' as const, // Default to Health or random as subtype isn't in client yet
+                    startDate: c.created_at || new Date().toISOString(),
+                    endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString(),
+                    amountPaid: 10000,
+                    sumInsured: 300000,
+                    status: (c.policyStatus as any) || 'Active'
+                } as GeneralPolicy))
+
+            setPolicies(prev => {
+                const existingIds = new Set(MOCK_POLICIES.map(p => p.id))
+                const newClients = generalClients.filter(c => !existingIds.has(c.id))
+                return [...MOCK_POLICIES, ...newClients]
+            })
+        })
+    }, [])
+
     const filteredPolicies = policies.filter(policy =>
         policy.holderName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         policy.type.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -79,12 +107,7 @@ export default function GeneralInsurancePage() {
                     <h1 className="text-2xl font-bold text-slate-900">General Insurance</h1>
                     <p className="text-slate-500 text-sm">Manage health, motor, and other general insurance policies.</p>
                 </div>
-                <Link
-                    href="/dashboard/insurance/general/new"
-                    className="bg-blue-600 text-white px-5 py-2.5 rounded-lg font-medium hover:bg-blue-700 transition-all shadow-sm hover:shadow active:scale-95 flex items-center justify-center gap-2"
-                >
-                    <span>+ New Policy</span>
-                </Link>
+
             </div>
 
             {/* Search Bar */}

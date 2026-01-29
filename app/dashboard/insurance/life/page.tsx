@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Plus, Search } from 'lucide-react'
 import { LifeTable } from './_components/life-table'
 import { LifeForm } from './_components/life-form'
@@ -67,6 +67,39 @@ export default function LifeInsurancePage() {
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingPolicy, setEditingPolicy] = useState<LifePolicy | null>(null)
 
+  // Load clients from storage and merge
+  useEffect(() => {
+    import('../../clients/client-storage').then(({ ClientStorage }) => {
+      const clients = ClientStorage.getClients()
+      const lifeClients = clients
+        .filter(c => c.productType === 'Life Insurance')
+        .map(c => ({
+          id: c.id,
+          policyNumber: `POL-${c.id.substring(0, 8).toUpperCase()}`,
+          holderName: c.name,
+          contactNumber: c.phone,
+          email: c.email,
+          planType: 'Term Life' as const,
+          sumAssured: 5000000,
+          premiumAmount: 15000,
+          premiumFrequency: 'Yearly' as const,
+          startDate: c.created_at || new Date().toISOString(),
+          maturityDate: new Date(new Date().setFullYear(new Date().getFullYear() + 20)).toISOString(),
+          nextDueDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString(),
+          nominee: 'Nominee Name',
+          status: (c.policyStatus as any) || 'Active',
+          insurer: c.insurer || 'LIC'
+        } as LifePolicy))
+
+      // Merge with mock data, avoiding duplicates if IDs conflict (though mock IDs are '1', '2' etc)
+      setPolicies(prev => {
+        const existingIds = new Set(MOCK_DATA.map(p => p.id))
+        const newClients = lifeClients.filter(c => !existingIds.has(c.id))
+        return [...MOCK_DATA, ...newClients]
+      })
+    })
+  }, [])
+
   const filteredPolicies = policies.filter(policy =>
     policy.holderName.toLowerCase().includes(searchQuery.toLowerCase()) ||
     policy.planType.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -115,13 +148,7 @@ export default function LifeInsurancePage() {
           <h1 className="text-2xl font-bold text-slate-900">Life Insurance</h1>
           <p className="text-slate-500 text-sm">Manage life insurance policies, premiums, and renewals.</p>
         </div>
-        <button
-          onClick={openCreateModal}
-          className="bg-blue-600 text-white px-5 py-2.5 rounded-lg font-medium hover:bg-blue-700 transition-all shadow-sm hover:shadow active:scale-95 flex items-center justify-center gap-2"
-        >
-          <Plus size={20} />
-          <span>New Life Policy</span>
-        </button>
+
       </div>
 
       {/* Search Bar */}
