@@ -1,16 +1,16 @@
 'use client'
 
 import React from 'react'
+import Link from 'next/link'
 import { LifePolicy } from '../types'
 import { Pencil, Trash2 } from 'lucide-react'
 
 interface LifeTableProps {
     policies: LifePolicy[]
-    onEdit: (policy: LifePolicy) => void
     onDelete: (id: string) => void
 }
 
-export function LifeTable({ policies, onEdit, onDelete }: LifeTableProps) {
+export function LifeTable({ policies, onDelete }: LifeTableProps) {
     const [confirmDeleteId, setConfirmDeleteId] = React.useState<string | null>(null)
 
     if (policies.length === 0) {
@@ -27,8 +27,8 @@ export function LifeTable({ policies, onEdit, onDelete }: LifeTableProps) {
                 <thead className="bg-slate-50 text-slate-700 font-medium">
                     <tr>
                         <th className="px-4 py-3">Policy No</th>
-                        <th className="px-4 py-3">Holder Name</th>
-                        <th className="px-4 py-3">Plan Type</th>
+                        <th className="px-4 py-3">Insured Name</th>
+                        <th className="px-4 py-3">Insurer</th>
                         <th className="px-4 py-3">Sum Insured</th>
                         <th className="px-4 py-3">Premium</th>
                         <th className="px-4 py-3">Renewal Date</th>
@@ -44,13 +44,13 @@ export function LifeTable({ policies, onEdit, onDelete }: LifeTableProps) {
                                 <div className="font-medium text-slate-900">{policy.holderName}</div>
                                 <div className="text-xs text-slate-500">{policy.contactNumber}</div>
                             </td>
-                            <td className="px-4 py-3">{policy.planType}</td>
-                            <td className="px-4 py-3">₹{policy.sumAssured.toLocaleString()}</td>
                             <td className="px-4 py-3">
-                                ₹{policy.premiumAmount.toLocaleString()}
-                                <span className="text-xs text-slate-500 block">/{policy.premiumFrequency}</span>
+                                <div className="font-medium text-slate-900">{policy.insurer}</div>
+                                <div className="text-xs text-slate-500">{policy.planType}</div>
                             </td>
-                            <td className="px-4 py-3">{new Date(policy.nextDueDate).toLocaleDateString()}</td>
+                            <td className="px-4 py-3">₹{policy.sumAssured.toLocaleString()}</td>
+                            <td className="px-4 py-3">₹{policy.premiumAmount.toLocaleString()}</td>
+                            <td className="px-4 py-3">{new Date(policy.maturityDate).toLocaleDateString()}</td>
                             <td className="px-4 py-3">
                                 <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full 
                   ${policy.status === 'Active' ? 'bg-green-100 text-green-700' :
@@ -62,13 +62,13 @@ export function LifeTable({ policies, onEdit, onDelete }: LifeTableProps) {
                             </td>
                             <td className="px-4 py-3 text-right">
                                 <div className="flex items-center justify-end gap-2">
-                                    <button
-                                        onClick={() => onEdit(policy)}
+                                    <Link
+                                        href={`/dashboard/insurance/life/${policy.id}/edit`}
                                         className="p-1.5 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
                                         title="Edit"
                                     >
                                         <Pencil size={16} />
-                                    </button>
+                                    </Link>
                                     <button
                                         onClick={() => setConfirmDeleteId(policy.id)}
                                         className="p-1.5 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"

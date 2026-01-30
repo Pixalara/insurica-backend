@@ -22,7 +22,7 @@ export async function getClients({
 
   let dbQuery = supabase
     .from('clients')
-    .select('*, companies(name)', { count: 'exact' })
+    .select('*', { count: 'exact' })
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1)
 
@@ -35,7 +35,6 @@ export async function getClients({
   }
 
   if (product !== 'All') {
-
     const categoryMap: Record<string, string> = {
       'Life Insurance': 'Life',
       'General Insurance': 'General',
@@ -49,15 +48,35 @@ export async function getClients({
     }
   }
 
-  const { data, error, count } = await dbQuery
+  const { data: clients, error, count } = await dbQuery
 
   if (error) {
     console.error('Error fetching clients:', error)
     throw new Error('Failed to fetch clients')
   }
 
+  // Manually fetch companies to avoid join errors
+  let clientsWithCompanies = clients
+  if (clients && clients.length > 0) {
+      const companyIds = Array.from(new Set(clients.map((c: any) => c.company_id).filter(Boolean)))
+      if (companyIds.length > 0) {
+          const { data: companies } = await supabase
+              .from('companies')
+              .select('id, name')
+              .in('id', companyIds)
+          
+          if (companies) {
+              const companyMap = new Map(companies.map((c: any) => [c.id, c]))
+              clientsWithCompanies = clients.map((client: any) => ({
+                  ...client,
+                  companies: client.company_id ? [companyMap.get(client.company_id) || { name: 'Unknown' }] : []
+              }))
+          }
+      }
+  }
+
   return {
-    clients: data,
+    clients: clientsWithCompanies,
     totalPages: count ? Math.ceil(count / limit) : 0,
     currentPage: page,
     totalCount: count
