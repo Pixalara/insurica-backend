@@ -5,109 +5,75 @@ import Link from 'next/link'
 import { Search } from 'lucide-react'
 import { HealthTable } from './_components/health-table'
 import { HealthPolicy } from './types'
-
-// Mock Data for demonstration
-const MOCK_POLICIES: HealthPolicy[] = [
-    {
-        id: '1',
-        policyNumber: 'HI-2024-001',
-        holderName: 'Vikram Singh',
-        contactNumber: '+91 98765 00001',
-        email: 'vikram.s@example.com',
-        planType: 'Family Floater',
-        sumInsured: 500000,
-        premiumAmount: 12500,
-        startDate: '2024-03-01',
-        endDate: '2025-02-28',
-        renewalDate: '2025-02-28',
-        membersCovered: 4,
-        status: 'Active',
-        insurer: 'Star Health'
-    },
-    {
-        id: '2',
-        policyNumber: 'HI-2024-042',
-        holderName: 'Anjali Desai',
-        contactNumber: '+91 98123 99999',
-        email: 'anjali.d@example.com',
-        planType: 'Individual',
-        sumInsured: 1000000,
-        premiumAmount: 8000,
-        startDate: '2023-06-15',
-        endDate: '2024-06-14',
-        renewalDate: '2024-06-14',
-        membersCovered: 1,
-        status: 'Active',
-        insurer: 'HDFC Ergo'
-    },
-    {
-        id: '3',
-        policyNumber: 'HI-2023-112',
-        holderName: 'Ramesh Gupta',
-        contactNumber: '+91 99887 11223',
-        email: 'ramesh.g@example.com',
-        planType: 'Senior Citizen',
-        sumInsured: 300000,
-        premiumAmount: 18000,
-        startDate: '2023-01-10',
-        endDate: '2024-01-09',
-        renewalDate: '2024-01-09',
-        membersCovered: 2,
-        status: 'Expired',
-        insurer: 'Niva Bupa'
-    },
-    {
-        id: '4',
-        policyNumber: 'HI-2024-088',
-        holderName: 'Kavita Reddy',
-        contactNumber: '+91 98765 55443',
-        email: 'kavita.r@example.com',
-        planType: 'Critical Illness',
-        sumInsured: 2500000,
-        premiumAmount: 22000,
-        startDate: '2024-02-01',
-        endDate: '2025-01-31',
-        renewalDate: '2025-01-31',
-        membersCovered: 1,
-        status: 'Active',
-        insurer: 'ICICI Lombard'
-    }
-]
+import { getClients, deleteClient } from '../../clients/actions'
+import { Client } from '../../clients/types'
+import { toast } from 'sonner'
 
 export default function HealthInsurancePage() {
-    const [policies, setPolicies] = useState<HealthPolicy[]>(MOCK_POLICIES)
+    const [policies, setPolicies] = useState<HealthPolicy[]>([])
     const [searchQuery, setSearchQuery] = useState('')
+    const [loading, setLoading] = useState(true)
 
-    // Load clients from storage and merge
-    useEffect(() => {
-        import('../../clients/client-storage').then(({ ClientStorage }) => {
-            const clients = ClientStorage.getClients()
-            const healthClients = clients
-                .filter(c => c.productType === 'Health Insurance')
-                .map(c => ({
+    const fetchPolicies = async () => {
+        try {
+            setLoading(true)
+            // Fetch clients with 'Health' category
+            // Note: The actions.ts getClients filters by 'product' argument which maps 'Health Insurance' -> 'Health'
+            const { clients } = await getClients({ product: 'Health' })
+            
+            const healthPolicies: HealthPolicy[] = clients.map((c: Client) => {
+                let insurerName = 'Unknown Insurer'
+                const companiesData = c.companies as any
+
+                if (companiesData) {
+                    if (Array.isArray(companiesData) && companiesData.length > 0) {
+                        insurerName = companiesData[0]?.name || 'Unknown Insurer'
+                    } else if (typeof companiesData === 'object' && companiesData.name) {
+                        insurerName = companiesData.name
+                    }
+                }
+
+                return {
                     id: c.id,
-                    policyNumber: `HI-${c.id.substring(0, 8).toUpperCase()}`,
+                    policyNumber: c.policy_number,
                     holderName: c.name,
-                    contactNumber: c.phone,
-                    email: c.email,
-                    planType: 'Individual' as const,
-                    sumInsured: 500000,
-                    premiumAmount: 12000,
-                    startDate: c.created_at || new Date().toISOString(),
-                    endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString(),
-                    renewalDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString(),
-                    membersCovered: 1,
-                    status: c.policyStatus || 'Active',
-                    insurer: c.insurer || 'Star Health'
-                } as HealthPolicy))
-
-            setPolicies(prev => {
-                const existingIds = new Set(prev.map(p => p.id))
-                const newClients = healthClients.filter(c => !existingIds.has(c.id))
-                return [...prev, ...newClients]
+                    contactNumber: c.phone || '',
+                    email: c.email || '',
+                    planType: c.product_name || 'Individual', // Defaulting since planType isn't a strict field in Client
+                    sumInsured: c.sum_insured || 0,
+                    premiumAmount: c.premium_amount || 0,
+                    startDate: c.start_date || new Date().toISOString(),
+                    endDate: c.end_date || new Date().toISOString(),
+                    renewalDate: c.end_date || new Date().toISOString(),
+                    membersCovered: 1, // Default as not in schema
+                    status: (c.status as any) || 'Active',
+                    insurer: insurerName
+                }
             })
-        })
+            
+            setPolicies(healthPolicies)
+        } catch (error) {
+            console.error('Failed to fetch health insurance policies:', error)
+            toast.error('Failed to load health policies')
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    useEffect(() => {
+        fetchPolicies()
     }, [])
+
+    const handleDelete = async (id: string) => {
+        try {
+            await deleteClient(id)
+            setPolicies(policies.filter(p => p.id !== id))
+            toast.success('Policy deleted successfully')
+        } catch (error) {
+            console.error('Failed to delete policy:', error)
+            toast.error('Failed to delete policy')
+        }
+    }
 
     const filteredPolicies = policies.filter(policy =>
         policy.holderName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -122,7 +88,6 @@ export default function HealthInsurancePage() {
                     <h1 className="text-2xl font-bold text-slate-900">Health Insurance</h1>
                     <p className="text-slate-500 text-sm">Manage health policies, renewal dates, and claims.</p>
                 </div>
-
             </div>
 
             {/* Search Bar */}
@@ -137,10 +102,16 @@ export default function HealthInsurancePage() {
                 />
             </div>
 
-            <HealthTable
-                policies={filteredPolicies}
-                onDelete={(id) => setPolicies(policies.filter(p => p.id !== id))}
-            />
+            {loading ? (
+                <div className="text-center py-20 bg-slate-50 rounded-xl border border-dashed border-slate-300">
+                    <p className="text-slate-500">Loading policies...</p>
+                </div>
+            ) : (
+                <HealthTable
+                    policies={filteredPolicies}
+                    onDelete={handleDelete}
+                />
+            )}
         </div>
     )
 }
