@@ -1,10 +1,25 @@
 'use client'
 
-import { Client } from './types'
+
 
 const STORAGE_KEY = 'insurica_clients'
 
-const MOCK_CLIENTS: Client[] = [
+interface MockClient {
+    id: string
+    name: string
+    email: string
+    phone: string
+    created_at: string
+    registrationStatus: string
+    policyStatus: string
+    productType: string
+    insurer: string
+    city: string
+    state: string
+    [key: string]: any
+}
+
+const MOCK_CLIENTS: MockClient[] = [
     {
         id: '1',
         name: 'Amit Sharma',
@@ -73,7 +88,7 @@ const MOCK_CLIENTS: Client[] = [
 ]
 
 export const ClientStorage = {
-    getClients: (): Client[] => {
+    getClients: (): MockClient[] => {
         if (typeof window === 'undefined') return []
         
         const stored = localStorage.getItem(STORAGE_KEY)
@@ -90,20 +105,20 @@ export const ClientStorage = {
         }
     },
 
-    addClient: (client: Omit<Client, 'id' | 'created_at'>): Client => {
+    addClient: (client: Partial<MockClient>): MockClient => {
         const clients = ClientStorage.getClients()
         const newClient = {
             ...client,
             id: crypto.randomUUID(),
             created_at: new Date().toISOString()
-        } as Client
+        } as MockClient
         
         const updatedClients = [newClient, ...clients]
         localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedClients))
         return newClient
     },
 
-    updateClient: (id: string, updates: Partial<Client>): Client | null => {
+    updateClient: (id: string, updates: Partial<MockClient>): MockClient | null => {
         const clients = ClientStorage.getClients()
         const index = clients.findIndex(c => c.id === id)
         

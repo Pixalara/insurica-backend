@@ -87,15 +87,15 @@ export default function LifeInsurancePage() {
           maturityDate: new Date(new Date().setFullYear(new Date().getFullYear() + 20)).toISOString(),
           nextDueDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString(),
           nominee: 'Nominee Name',
-          status: (c.policyStatus as any) || 'Active',
+          status: c.policyStatus || 'Active',
           insurer: c.insurer || 'LIC'
         } as LifePolicy))
 
       // Merge with mock data, avoiding duplicates if IDs conflict (though mock IDs are '1', '2' etc)
       setPolicies(prev => {
-        const existingIds = new Set(MOCK_DATA.map(p => p.id))
+        const existingIds = new Set(prev.map(p => p.id))
         const newClients = lifeClients.filter(c => !existingIds.has(c.id))
-        return [...MOCK_DATA, ...newClients]
+        return [...prev, ...newClients]
       })
     })
   }, [])

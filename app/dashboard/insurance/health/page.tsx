@@ -97,14 +97,14 @@ export default function HealthInsurancePage() {
                     endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString(),
                     renewalDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString(),
                     membersCovered: 1,
-                    status: (c.policyStatus as any) || 'Active',
+                    status: c.policyStatus || 'Active',
                     insurer: c.insurer || 'Star Health'
                 } as HealthPolicy))
 
             setPolicies(prev => {
-                const existingIds = new Set(MOCK_POLICIES.map(p => p.id))
+                const existingIds = new Set(prev.map(p => p.id))
                 const newClients = healthClients.filter(c => !existingIds.has(c.id))
-                return [...MOCK_POLICIES, ...newClients]
+                return [...prev, ...newClients]
             })
         })
     }, [])
