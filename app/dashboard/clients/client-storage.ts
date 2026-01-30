@@ -78,7 +78,6 @@ export const ClientStorage = {
         
         const stored = localStorage.getItem(STORAGE_KEY)
         if (!stored) {
-            // Seed initial data
             localStorage.setItem(STORAGE_KEY, JSON.stringify(MOCK_CLIENTS))
             return MOCK_CLIENTS
         }

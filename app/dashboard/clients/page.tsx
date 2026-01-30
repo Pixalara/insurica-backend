@@ -1,66 +1,30 @@
-'use client'
-
-import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { ClientStats } from './_components/client-stats'
 import { ClientTable } from './_components/client-table'
-import { Client } from './types'
-import { ClientStorage } from './client-storage'
-
-/**
- * Insurica Client Directory
- * Displays all clients managed by the authenticated agent.
- */
 import { ClientFilters } from './_components/client-filters'
+import { getClients, getClientMetrics } from './actions'
 
-export default function ClientsPage() {
-  const [clients, setClients] = useState<Client[]>([])
-  const [loading, setLoading] = useState(true)
+export default async function ClientsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ query?: string; status?: string; product?: string; page?: string }>
+}) {
+  const params = await searchParams; // Next.js 15 requires awaiting params
+  const query = params.query || ''
+  const status = params.status || 'All'
+  const product = params.product || 'All'
+  const currentPage = Number(params.page) || 1
 
-  // Filter States
-  const [searchQuery, setSearchQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState('All')
-  const [productFilter, setProductFilter] = useState('All')
-
-  useEffect(() => {
-    // Load clients from local storage on mount
-    const loadClients = () => {
-      const data = ClientStorage.getClients()
-      setClients(data)
-      setLoading(false)
-    }
-
-    loadClients()
-
-    // Listen for storage events to sync across tabs/windows if needed
-    window.addEventListener('storage', loadClients)
-    return () => window.removeEventListener('storage', loadClients)
-  }, [])
-
-  // Filter Logic
-  const filteredClients = clients.filter(client => {
-    const matchesSearch =
-      client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (client.email && client.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (client.phone && client.phone.includes(searchQuery))
-
-    const matchesStatus = statusFilter === 'All' || client.policyStatus === statusFilter
-
-    // Exact match for product or substring match for flexibility
-    const matchesProduct = productFilter === 'All' ||
-      (client.productType && client.productType.includes(productFilter.replace(' Insurance', ''))) ||
-      client.productType === productFilter
-
-    return matchesSearch && matchesStatus && matchesProduct
+  const { clients, totalCount } = await getClients({
+    query,
+    status,
+    product,
+    page: currentPage,
   })
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center p-20">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    )
-  }
+  const stats = await getClientMetrics()
+
+
 
   return (
     <div className="space-y-6">
@@ -77,23 +41,15 @@ export default function ClientsPage() {
         </Link>
       </div>
 
-      <ClientStats totalClients={clients.length} />
+      <ClientStats stats={stats} />
 
-      <ClientFilters
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        statusFilter={statusFilter}
-        setStatusFilter={setStatusFilter}
-        productFilter={productFilter}
-        setProductFilter={setProductFilter}
-        resetFilters={() => {
-          setSearchQuery('')
-          setStatusFilter('All')
-          setProductFilter('All')
-        }}
-      />
+      <ClientFilters />
 
-      <ClientTable clients={filteredClients} onRefresh={() => setClients(ClientStorage.getClients())} />
+      <ClientTable clients={clients as any} /> 
+      
+      <div className="text-center text-xs text-slate-400 mt-4">
+        Showing {clients.length} of {totalCount} clients
+      </div>
     </div>
   )
 }

@@ -1,88 +1,112 @@
 'use client'
 
-import { useState } from 'react'
-import { createClient } from '@/utils/supabase/client'
+import { useState, useEffect } from 'react'
+import { createClient, getCompanies } from '../actions'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
 
-const INSURANCE_COMPANIES = [
-  'LIC',
-  'HDFC Life',
-  'Star Health',
-  'ICICI Lombard',
-  'Bajaj Allianz',
-  'Max Life',
-  'Tata AIA',
-  'Niva Bupa',
-  'Aditya Birla',
-  'Other'
-]
+const CATEGORIES = ['General', 'Health', 'Life'] as const
 
-const PRODUCT_TYPES = [
-  'Life Insurance',
-  'General Insurance',
-  'Health Insurance'
-]
+type Company = {
+  id: string
+  name: string
+  type: 'General' | 'Health' | 'Life'
+}
 
 export default function NewClientPage() {
+  // Required Fields
   const [name, setName] = useState('')
-  const [phone, setPhone] = useState('')
-  const [email, setEmail] = useState('')
-  const [dob, setDob] = useState('')
-  const [gender, setGender] = useState('')
-  const [company, setCompany] = useState('')
-  const [address, setAddress] = useState('')
-  const [city, setCity] = useState('')
-  const [state, setState] = useState('')
-  const [zip, setZip] = useState('')
-  const [notes, setNotes] = useState('')
+  const [policyNumber, setPolicyNumber] = useState('')
+  const [category, setCategory] = useState<typeof CATEGORIES[number] | ''>('')
+  
+  // Dependent on Category
+  const [companies, setCompanies] = useState<Company[]>([])
+  const [selectedCompanyId, setSelectedCompanyId] = useState('')
 
-  // New Fields
-  const [productType, setProductType] = useState('')
-  const [policyStatus, setPolicyStatus] = useState('Active')
+  // Other Fields
+  const [email, setEmail] = useState('')
+  const [phone, setPhone] = useState('')
+  const [productName, setProductName] = useState('')
+  const [sumInsured, setSumInsured] = useState('')
+  const [premiumAmount, setPremiumAmount] = useState('')
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
+  const [policyDuration, setPolicyDuration] = useState('')
+  const [notes, setNotes] = useState('')
+  const [status, setStatus] = useState('Active')
 
   const [loading, setLoading] = useState(false)
+  const [fetchingCompanies, setFetchingCompanies] = useState(false)
 
-  /* Supabase Code - Commented out for Local Storage Mode
-  const supabase = createClient() 
-  */
   const router = useRouter()
+
+  useEffect(() => {
+    // Fetch companies when category changes
+    async function fetchCompanies() {
+      if (!category) {
+        setCompanies([])
+        setSelectedCompanyId('')
+        return
+      }
+
+      setFetchingCompanies(true)
+      try {
+        const data = await getCompanies(category)
+        setCompanies(data as any[])  
+      } catch (err) {
+        console.error('Failed to fetch companies', err)
+        toast.error('Failed to load companies')
+      } finally {
+        setFetchingCompanies(false)
+      }
+    }
+
+    fetchCompanies()
+  }, [category])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Validations
+    if (!category) {
+      toast.error('Please select a Policy Category first')
+      return
+    }
+    if (!selectedCompanyId) {
+      toast.error('Please select an Insurance Company')
+      return
+    }
+
     setLoading(true)
-    const toastId = toast.loading('Saving client details...')
+    const toastId = toast.loading('Saving client/policy...')
 
     try {
-      // Dynamically import storage to avoid SSR issues if any
-      const { ClientStorage } = await import('../client-storage')
-
-      ClientStorage.addClient({
+      const formData = {
         name,
-        phone,
-        email,
-        dob,
-        gender: gender as any,
-        // company, // Use company as insurer
-        address,
-        city,
-        state,
-        zip,
-        notes,
-        registrationStatus: 'Registered',
-        policyStatus: policyStatus as any,
-        productType: productType,
-        insurer: company
-      })
+        email: email || null,
+        phone: phone || null,
+        policy_number: policyNumber,
+        category,
+        company_id: selectedCompanyId,
+        product_name: productName || null,
+        sum_insured: sumInsured,
+        premium_amount: premiumAmount,
+        start_date: startDate,
+        end_date: endDate,
+        policy_duration: policyDuration,
+        notes: notes,
+        status
+      }
 
-      toast.success('Client created locally', { id: toastId })
-      router.push('/dashboard/clients')
-      router.refresh()
+      await createClient(formData)
+
+      toast.success('Client added successfully', { id: toastId })
+      router.push('/dashboard/clients') 
     } catch (error: any) {
       console.error('Save error', error)
-      toast.error('Failed to save client locally', { id: toastId })
+      toast.error('Failed to save client: ' + error.message, { id: toastId })
       setLoading(false)
     }
   }
@@ -93,18 +117,18 @@ export default function NewClientPage() {
         <Link href="/dashboard/clients" className="text-slate-500 hover:text-slate-800 gap-2 mb-2 inline-flex items-center">
           <ArrowLeft className="w-4 h-4" /> Back to Directory
         </Link>
-        <h1 className="text-2xl font-bold text-slate-900">Add New Client</h1>
-        <p className="text-slate-500 text-sm mt-1">Enter client basic information and insurance portfolio details.</p>
+        <h1 className="text-2xl font-bold text-slate-900">Add New Client / Policy</h1>
+        <p className="text-slate-500 text-sm mt-1">Enter client and policy details. Policy Number and Category are required.</p>
       </div>
 
       <form onSubmit={handleSubmit} className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-6">
 
         {/* Basic Information Section */}
         <div>
-          <h3 className="text-lg font-semibold text-slate-800 mb-4 pb-2 border-b border-slate-100">Personal Information</h3>
+          <h3 className="text-lg font-semibold text-slate-800 mb-4 pb-2 border-b border-slate-100">Insured Details</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div className="md:col-span-2">
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Full Name <span className="text-red-500">*</span></label>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Insured Name <span className="text-red-500">*</span></label>
               <input
                 required
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
@@ -134,129 +158,141 @@ export default function NewClientPage() {
                 placeholder="e.g. john@example.com"
               />
             </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Gender</label>
-              <select
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium appearance-none"
-                value={gender}
-                onChange={(e) => setGender(e.target.value)}
-              >
-                <option value="">Select Gender</option>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-                <option value="Other">Other</option>
-              </select>
-            </div>
-
-            {/* Company Dropdown */}
-            <div className="md:col-span-2">
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Insurance Company / Organization</label>
-              <select
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium appearance-none"
-                value={company}
-                onChange={(e) => setCompany(e.target.value)}
-              >
-                <option value="">Select Company</option>
-                {INSURANCE_COMPANIES.map(comp => (
-                  <option key={comp} value={comp}>{comp}</option>
-                ))}
-              </select>
-            </div>
           </div>
         </div>
 
         {/* Policy Details Section */}
         <div>
-          <h3 className="text-lg font-semibold text-slate-800 mb-4 pb-2 border-b border-slate-100">Policy Details</h3>
+          <h3 className="text-lg font-semibold text-slate-800 mb-4 pb-2 border-b border-slate-100">Policy Information</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Product Type</label>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Category <span className="text-red-500">*</span></label>
               <select
+                required
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium appearance-none"
-                value={productType}
-                onChange={(e) => setProductType(e.target.value)}
+                value={category}
+                onChange={(e) => setCategory(e.target.value as any)}
               >
-                <option value="">Select Product Type</option>
-                {PRODUCT_TYPES.map(type => (
-                  <option key={type} value={type}>{type}</option>
+                <option value="">Select Category</option>
+                {CATEGORIES.map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
                 ))}
               </select>
             </div>
+
             <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Insurer Name <span className="text-red-500">*</span></label>
+              <select
+                required
+                disabled={!category || fetchingCompanies}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium appearance-none disabled:bg-slate-100 disabled:text-slate-400"
+                value={selectedCompanyId}
+                onChange={(e) => setSelectedCompanyId(e.target.value)}
+              >
+                <option value="">
+                  {fetchingCompanies ? 'Loading...' : (category ? 'Select Company' : 'Select Category First')}
+                </option>
+                {companies.map(comp => (
+                  <option key={comp.id} value={comp.id}>{comp.name}</option>
+                ))}
+              </select>
+            </div>
+
+          <div>
+               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Policy Number <span className="text-red-500">*</span></label>
+               <input
+                required
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
+                value={policyNumber}
+                onChange={(e) => setPolicyNumber(e.target.value)}
+                placeholder="e.g. POL-123456789"
+              />
+            </div>
+             <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Product Opted </label>
+              <input
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
+                value={productName}
+                onChange={(e) => setProductName(e.target.value)}
+                placeholder="e.g. Jeevan Anand"
+              />
+            </div>
+
+             <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Sum Insured</label>
+              <input
+                type="number"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
+                value={sumInsured}
+                onChange={(e) => setSumInsured(e.target.value)}
+                placeholder="e.g. 500000"
+              />
+            </div>
+             <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Premium Collected (incl. taxes)</label>
+              <input
+                type="number"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
+                value={premiumAmount}
+                onChange={(e) => setPremiumAmount(e.target.value)}
+                placeholder="e.g. 15000"
+              />
+            </div>
+
+            <div>
+               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Policy Start Date</label>
+               <input
+                type="date"
+                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+               />
+            </div>
+            <div>
+               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Policy End Date</label>
+               <input
+                type="date"
+                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+               />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Policy Duration</label>
+              <input
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
+                value={policyDuration}
+                onChange={(e) => setPolicyDuration(e.target.value)}
+                placeholder="e.g. 1 Year"
+              />
+            </div>
+             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Policy Status</label>
               <select
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium appearance-none"
-                value={policyStatus}
-                onChange={(e) => setPolicyStatus(e.target.value)}
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
               >
                 <option value="Active">Active</option>
                 <option value="Inactive">Inactive</option>
                 <option value="Expired">Expired</option>
               </select>
             </div>
-          </div>
-        </div>
-
-
-        {/* Address Section */}
-        <div>
-          <h3 className="text-lg font-semibold text-slate-800 mb-4 pb-2 border-b border-slate-100">Address Details</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            
             <div className="md:col-span-2">
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Street Address</label>
-              <input
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Notes</label>
+              <textarea
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                placeholder="123 Main St, Apt 4B"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Add any additional notes here..."
+                rows={3}
               />
             </div>
 
-            <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">City</label>
-              <input
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-                placeholder="Mumbai"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">State</label>
-                <input
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
-                  value={state}
-                  onChange={(e) => setState(e.target.value)}
-                  placeholder="MH"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Zip Code</label>
-                <input
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
-                  value={zip}
-                  onChange={(e) => setZip(e.target.value)}
-                  placeholder="400001"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Notes Section */}
-        <div>
-          <h3 className="text-lg font-semibold text-slate-800 mb-4 pb-2 border-b border-slate-100">Additional Notes</h3>
-          <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Remarks</label>
-            <textarea
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium min-h-[100px]"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Any specific requirements or existing medical conditions..."
-            />
+           
           </div>
         </div>
 
@@ -266,7 +302,7 @@ export default function NewClientPage() {
             disabled={loading}
             className="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm"
           >
-            {loading ? 'Saving Client...' : 'Save Client'}
+            {loading ? 'Saving...' : 'Save Policy'}
           </button>
           <button
             type="button"

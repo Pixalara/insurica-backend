@@ -1,48 +1,61 @@
 import { Users, FileCheck, AlertCircle, IndianRupee } from 'lucide-react'
 
 interface ClientStatsProps {
-    totalClients: number
+    stats: {
+        totalClients: number
+        activePolicies: number
+        pendingRenewals: number
+        totalPremium: number
+    }
 }
 
-export function ClientStats({ totalClients }: ClientStatsProps) {
-    const stats = [
+export function ClientStats({ stats: { totalClients, activePolicies, pendingRenewals, totalPremium } }: ClientStatsProps) {
+    
+    const formatPremium = (amount: number) => {
+        if (amount >= 100000) {
+            return `₹${(amount / 100000).toFixed(1)}L`
+        }
+        return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount)
+    }
+
+    const statsData = [
         {
             label: "Total Clients",
             value: totalClients,
             icon: Users,
             color: "text-blue-600",
             bg: "bg-blue-50",
-            trend: "+12% from last month"
+            trend: "Total registered clients"
         },
         {
             label: "Active Policies",
-            value: totalClients > 0 ? totalClients - 1 : 0,
+            value: activePolicies,
             icon: FileCheck,
             color: "text-green-600",
             bg: "bg-green-50",
-            trend: "+5% from last month"
+            trend: "Currently active policies"
         },
         {
             label: "Pending Renewals",
-            value: "3",
+            value: pendingRenewals,
             icon: AlertCircle,
             color: "text-amber-600",
             bg: "bg-amber-50",
-            trend: "Requires attention"
+            trend: "Expiring in 30 days"
         },
         {
             label: "Total Premium",
-            value: "₹4.2L",
+            value: formatPremium(totalPremium),
             icon: IndianRupee,
             color: "text-indigo-600",
             bg: "bg-indigo-50",
-            trend: "+8.5% growth"
+            trend: "Total premium volume"
         },
     ]
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            {stats.map((stat, i) => {
+            {statsData.map((stat, i) => {
                 const Icon = stat.icon
                 return (
                     <div key={i} className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">

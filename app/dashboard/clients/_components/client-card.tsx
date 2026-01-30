@@ -7,7 +7,7 @@ interface ClientCardProps {
 }
 
 export function ClientCard({ client }: ClientCardProps) {
-    const isRegistered = client.registrationStatus === 'Registered' || true // Defaulting to true as per requirements until data is available
+    const isRegistered = true
 
     return (
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 hover:shadow-md transition-shadow relative group">
