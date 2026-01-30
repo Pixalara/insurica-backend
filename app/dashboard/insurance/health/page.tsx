@@ -9,16 +9,18 @@ import { getClients, deleteClient } from '../../clients/actions'
 import { Client } from '../../clients/types'
 import { toast } from 'sonner'
 
+import { useRouter, useSearchParams } from 'next/navigation'
+
 export default function HealthInsurancePage() {
+    const searchParams = useSearchParams()
     const [policies, setPolicies] = useState<HealthPolicy[]>([])
-    const [searchQuery, setSearchQuery] = useState('')
+    const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '')
     const [loading, setLoading] = useState(true)
 
     const fetchPolicies = async () => {
         try {
             setLoading(true)
-            // Fetch clients with 'Health' category
-            // Note: The actions.ts getClients filters by 'product' argument which maps 'Health Insurance' -> 'Health'
+            
             const { clients } = await getClients({ product: 'Health' })
             
             const healthPolicies: HealthPolicy[] = clients.map((c: Client) => {
@@ -39,7 +41,7 @@ export default function HealthInsurancePage() {
                     holderName: c.name,
                     contactNumber: c.phone || '',
                     email: c.email || '',
-                    planType: c.product_name || 'Individual', // Defaulting since planType isn't a strict field in Client
+                    planType: c.product_name || 'Individual', 
                     sumInsured: c.sum_insured || 0,
                     premiumAmount: c.premium_amount || 0,
                     startDate: c.start_date || new Date().toISOString(),

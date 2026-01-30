@@ -8,9 +8,12 @@ import { getClients, deleteClient } from '../../clients/actions'
 import { Client } from '../../clients/types'
 import { toast } from 'sonner'
 
+import { useRouter, useSearchParams } from 'next/navigation'
+
 export default function GeneralInsurancePage() {
+    const searchParams = useSearchParams()
     const [policies, setPolicies] = useState<GeneralPolicy[]>([])
-    const [searchQuery, setSearchQuery] = useState('')
+    const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '')
     const [loading, setLoading] = useState(true)
 
     const fetchPolicies = async () => {

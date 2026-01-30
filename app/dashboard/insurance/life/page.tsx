@@ -8,12 +8,13 @@ import { getClients, deleteClient } from '../../clients/actions'
 import { Client } from '../../clients/types'
 import { toast } from 'sonner'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 export default function LifeInsurancePage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [policies, setPolicies] = useState<LifePolicy[]>([])
-  const [searchQuery, setSearchQuery] = useState('')
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '')
   const [loading, setLoading] = useState(true)
 
   const fetchPolicies = async () => {

@@ -1,22 +1,28 @@
 'use client'
 
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts'
+import { useState, useEffect } from 'react'
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 
-const data = [
-    { name: 'Jan', sales: 4 },
-    { name: 'Feb', sales: 7 },
-    { name: 'Mar', sales: 5 },
-    { name: 'Apr', sales: 11 },
-    { name: 'May', sales: 9 },
-    { name: 'Jun', sales: 15 },
-    { name: 'Jul', sales: 18 },
-]
+interface SalesTrendChartProps {
+    data: {
+        name: string
+        sales: number
+    }[]
+}
 
-export function SalesTrendChart() {
+export function SalesTrendChart({ data }: SalesTrendChartProps) {
+    const [mounted, setMounted] = useState(false)
+
+    useEffect(() => {
+        setMounted(true)
+    }, [])
+
+    if (!mounted) return <div className="h-[400px] w-full bg-white p-4 rounded-xl border border-slate-200" />
+
     return (
-        <div className="h-[400px] w-full bg-white p-4 rounded-xl border border-slate-200 flex flex-col">
+        <div className="h-[400px] w-full min-w-0 bg-white p-4 rounded-xl border border-slate-200 flex flex-col">
             <h3 className="text-lg font-bold text-slate-800 mb-4 px-2">Total Policies Sold Trend</h3>
-            <div className="flex-1 min-h-0">
+            <div className="h-[320px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                     <AreaChart
                         data={data}

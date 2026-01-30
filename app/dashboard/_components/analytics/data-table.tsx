@@ -1,5 +1,7 @@
 'use client'
 
+import Link from 'next/link'
+
 interface Column {
     key: string
     label: string
@@ -10,14 +12,21 @@ interface DataTableProps {
     columns: Column[]
     data: any[]
     title: string
+    viewAllLink?: string
 }
 
-export function DataTable({ columns, data, title }: DataTableProps) {
+export function DataTable({ columns, data, title, viewAllLink }: DataTableProps) {
     return (
         <div className="w-full h-full flex flex-col">
             <div className="px-5 py-4 border-b border-slate-100 flex justify-between items-center shrink-0">
                 <h3 className="text-lg font-bold text-slate-800">{title}</h3>
-                <button className="text-sm text-blue-600 font-medium hover:text-blue-700">View All</button>
+                {viewAllLink ? (
+                    <Link href={viewAllLink} className="text-sm text-blue-600 font-medium hover:text-blue-700">
+                        View All
+                    </Link>
+                ) : (
+                    <button className="text-sm text-blue-600 font-medium hover:text-blue-700">View All</button>
+                )}
             </div>
             <div className="flex-1 overflow-auto">
                 <table className="w-full text-left">
