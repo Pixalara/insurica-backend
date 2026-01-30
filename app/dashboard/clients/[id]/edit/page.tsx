@@ -46,7 +46,7 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
 
   const router = useRouter()
 
-  // Fetch Client Data
+
   useEffect(() => {
     async function fetchClient() {
       try {
@@ -85,7 +85,7 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
     }
   }, [id])
 
-  // Fetch companies when category changes
+
   useEffect(() => {
     async function fetchCompanies() {
       if (!category) {
@@ -103,6 +103,25 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
 
     fetchCompanies()
   }, [category])
+
+  // Auto-calculate duration
+  useEffect(() => {
+    if (startDate && endDate) {
+      const start = new Date(startDate)
+      const end = new Date(endDate)
+      const diffTime = Math.abs(end.getTime() - start.getTime())
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+
+      if (!isNaN(diffDays)) {
+        if (diffDays >= 365) {
+          const years = (diffDays / 365).toFixed(1)
+          setPolicyDuration(`${years} Year(s)`)
+        } else {
+          setPolicyDuration(`${diffDays} Days`)
+        }
+      }
+    }
+  }, [startDate, endDate])
 
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -320,10 +339,11 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Policy Duration</label>
               <input
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
+                readOnly
+                disabled
+                className="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-500 font-medium cursor-not-allowed"
                 value={policyDuration}
-                onChange={(e) => setPolicyDuration(e.target.value)}
-                placeholder="e.g. 1 Year"
+                placeholder="Auto-calculated"
               />
             </div>
              <div>

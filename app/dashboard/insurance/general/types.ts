@@ -4,10 +4,11 @@ export interface GeneralPolicy {
   holderName: string
   contactNumber: string
   email: string
-  type: 'Health' | 'Motor' | 'Travel' | 'Home' | 'Fire' | 'Other'
+  type: string
+  insurerName: string
   startDate: string // ISO date string
   endDate: string // ISO date string
   amountPaid: number
   sumInsured: number
-  status: 'Active' | 'Expired' | 'Pending'
+  status: 'Active' | 'Inactive' | 'Expired'
 }

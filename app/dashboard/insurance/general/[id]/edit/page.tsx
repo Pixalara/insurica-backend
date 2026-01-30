@@ -1,29 +1,29 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter, useParams } from 'next/navigation'
+import { useState, useEffect, use } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Trash2, Edit2, Save, X } from 'lucide-react'
-import { createClient } from '@/utils/supabase/client'
-import { GENERAL_INSURERS, GENERAL_PRODUCTS } from '../../constants'
+import { getClient, updateClient, deleteClient, getCompanies } from '../../../../clients/actions'
+import { toast } from 'sonner'
+import { Client } from '../../../../clients/types'
 
-export default function EditGeneralPolicyPage() {
+export default function EditGeneralPolicyPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = use(params)
     const router = useRouter()
-    const params = useParams()
-    const id = params.id as string
-    const supabase = createClient()
 
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const [isEditing, setIsEditing] = useState(false)
     const [showDeleteModal, setShowDeleteModal] = useState(false)
+    const [companies, setCompanies] = useState<{ id: string, name: string }[]>([])
 
     const [formData, setFormData] = useState({
         holderName: '',
         contactNumber: '',
         email: '',
-        insurer: '',
-        product: '',
+        companyId: '',
+        productName: '',
         policyNumber: '',
         startDate: '',
         endDate: '',
@@ -36,25 +36,43 @@ export default function EditGeneralPolicyPage() {
     const [duration, setDuration] = useState('')
 
     useEffect(() => {
-        // Simulate fetching data
-        setTimeout(() => {
-            setFormData({
-                holderName: 'Rajesh Kumar',
-                contactNumber: '+91 98765 43210',
-                email: 'rajesh.k@example.com',
-                insurer: 'HDFC ERGO General Insurance',
-                product: 'Health Insurance',
-                policyNumber: 'GI-2024-001',
-                startDate: '2024-01-15',
-                endDate: '2025-01-14',
-                premium: '15000',
-                sumInsured: '500000',
-                status: 'Active',
-                notes: 'Customer requested critical illness cover to be added next year.'
-            })
-            setLoading(false)
-        }, 500)
-    }, [id])
+        const loadData = async () => {
+            try {
+
+                const companiesData = await getCompanies('General')
+                setCompanies(companiesData || [])
+
+
+                const client = await getClient(id)
+                if (client) {
+                    setFormData({
+                        holderName: client.name,
+                        contactNumber: client.phone || '',
+                        email: client.email || '',
+                        companyId: client.company_id,
+                        productName: client.product_name || '',
+                        policyNumber: client.policy_number,
+                        startDate: client.start_date || '',
+                        endDate: client.end_date || '',
+                        premium: client.premium_amount?.toString() || '',
+                        sumInsured: client.sum_insured?.toString() || '',
+                        status: client.status || 'Active',
+                        notes: client.notes || ''
+                    })
+                } else {
+                    toast.error('Policy not found')
+                    router.push('/dashboard/insurance/general')
+                }
+            } catch (error) {
+                console.error('Error loading data:', error)
+                toast.error('Failed to load policy details')
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        loadData()
+    }, [id, router])
 
     // Auto-calculate duration
     useEffect(() => {
@@ -72,6 +90,8 @@ export default function EditGeneralPolicyPage() {
                     setDuration(`${diffDays} Days`)
                 }
             }
+        } else {
+             setDuration('')
         }
     }, [formData.startDate, formData.endDate])
 
@@ -82,19 +102,51 @@ export default function EditGeneralPolicyPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setSaving(true)
-        console.log('Updating Policy:', id, { ...formData, duration })
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        setSaving(false)
-        setIsEditing(false) // Switch back to view mode
-        router.refresh()
+        
+        try {
+            const updateData = {
+                name: formData.holderName,
+                email: formData.email || null,
+                phone: formData.contactNumber || null,
+                policy_number: formData.policyNumber,
+                category: 'General',
+                company_id: formData.companyId,
+                product_name: formData.productName,
+                sum_insured: formData.sumInsured,
+                premium_amount: formData.premium,
+                start_date: formData.startDate,
+                end_date: formData.endDate,
+                policy_duration: duration,
+                notes: formData.notes,
+                status: formData.status
+            }
+
+            await updateClient(id, updateData)
+            toast.success('Policy updated successfully')
+            setIsEditing(false)
+            router.refresh()
+        } catch (error) {
+           console.error('Error updating policy:', error)
+           toast.error('Failed to update policy')
+        } finally {
+            setSaving(false)
+        }
     }
 
     const handleDelete = async () => {
-        console.log('Deleting Policy:', id)
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        setShowDeleteModal(false)
-        router.push('/dashboard/insurance/general')
-        router.refresh()
+        try {
+             await deleteClient(id)
+             toast.success('Policy deleted successfully')
+             router.push('/dashboard/insurance/general')
+        } catch (error) {
+            console.error('Error deleting policy:', error)
+            toast.error('Failed to delete policy')
+        }
+    }
+    
+
+    const getCompanyName = (id: string) => {
+        return companies.find(c => c.id === id)?.name || ''
     }
 
     if (loading) return <div className="p-8 text-center text-slate-500">Loading policy details...</div>
@@ -178,36 +230,39 @@ export default function EditGeneralPolicyPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                         <div className="md:col-span-2">
                             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Insurer Name</label>
-                            <select
-                                required
-                                name="insurer"
-                                disabled={!isEditing}
-                                className={`w-full border rounded-xl px-4 py-3.5 transition-all font-medium appearance-none ${isEditing ? 'bg-slate-50 border-slate-200 text-slate-700 focus:ring-2 focus:ring-blue-500/20' : 'bg-transparent border-transparent px-0 text-slate-900'}`}
-                                value={formData.insurer}
-                                onChange={handleChange}
-                            >
-                                <option value="">Select Insurer</option>
-                                {GENERAL_INSURERS.map(insurer => (
-                                    <option key={insurer} value={insurer}>{insurer}</option>
-                                ))}
-                            </select>
+                            {isEditing ? (
+                                <select
+                                    required
+                                    name="companyId"
+                                    disabled={!isEditing}
+                                    className={`w-full border rounded-xl px-4 py-3.5 transition-all font-medium appearance-none ${isEditing ? 'bg-slate-50 border-slate-200 text-slate-700 focus:ring-2 focus:ring-blue-500/20' : 'bg-transparent border-transparent px-0 text-slate-900'}`}
+                                    value={formData.companyId}
+                                    onChange={handleChange}
+                                >
+                                    <option value="">Select Insurer</option>
+                                    {companies.map(company => (
+                                        <option key={company.id} value={company.id}>{company.name}</option>
+                                    ))}
+                                </select>
+                            ) : (
+                                <input
+                                    readOnly
+                                    className="w-full border-transparent bg-transparent px-0 text-slate-900 font-medium"
+                                    value={getCompanyName(formData.companyId)}
+                                />
+                            )}
                         </div>
 
                         <div className="md:col-span-1">
                             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Product Opted</label>
-                            <select
+                             <input
                                 required
-                                name="product"
+                                name="productName"
                                 disabled={!isEditing}
-                                className={`w-full border rounded-xl px-4 py-3.5 transition-all font-medium appearance-none ${isEditing ? 'bg-slate-50 border-slate-200 text-slate-700 focus:ring-2 focus:ring-blue-500/20' : 'bg-transparent border-transparent px-0 text-slate-900'}`}
-                                value={formData.product}
+                                className={`w-full border rounded-xl px-4 py-3.5 transition-all font-medium ${isEditing ? 'bg-slate-50 border-slate-200 text-slate-700 focus:ring-2 focus:ring-blue-500/20' : 'bg-transparent border-transparent px-0 text-slate-900'}`}
+                                value={formData.productName}
                                 onChange={handleChange}
-                            >
-                                <option value="">Select Product</option>
-                                {GENERAL_PRODUCTS.map(product => (
-                                    <option key={product} value={product}>{product}</option>
-                                ))}
-                            </select>
+                            />
                         </div>
 
                         <div className="md:col-span-1">
