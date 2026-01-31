@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { Search } from 'lucide-react'
 import { GeneralTable } from './_components/general-table'
 import { GeneralPolicy } from './types'
@@ -11,6 +11,18 @@ import { toast } from 'sonner'
 import { useRouter, useSearchParams } from 'next/navigation'
 
 export default function GeneralInsurancePage() {
+    return (
+        <Suspense fallback={
+            <div className="text-center py-20 bg-slate-50 rounded-xl border border-dashed border-slate-300">
+                <p className="text-slate-500">Loading...</p>
+            </div>
+        }>
+            <GeneralInsuranceContent />
+        </Suspense>
+    )
+}
+
+function GeneralInsuranceContent() {
     const searchParams = useSearchParams()
     const [policies, setPolicies] = useState<GeneralPolicy[]>([])
     const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '')

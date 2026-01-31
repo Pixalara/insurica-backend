@@ -1,17 +1,27 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Plus, Search } from 'lucide-react'
+import { useState, useEffect, Suspense } from 'react'
+import { Search } from 'lucide-react'
 import { LifeTable } from './_components/life-table'
 import { LifePolicy } from './types'
 import { getClients, deleteClient } from '../../clients/actions'
 import { Client } from '../../clients/types'
 import { toast } from 'sonner'
-import Link from 'next/link'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 
 export default function LifeInsurancePage() {
-  const router = useRouter()
+    return (
+        <Suspense fallback={
+            <div className="text-center py-20 bg-slate-50 rounded-xl border border-dashed border-slate-300">
+                <p className="text-slate-500">Loading...</p>
+            </div>
+        }>
+            <LifeInsuranceContent />
+        </Suspense>
+    )
+}
+
+function LifeInsuranceContent() {
   const searchParams = useSearchParams()
   const [policies, setPolicies] = useState<LifePolicy[]>([])
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '')
@@ -26,12 +36,12 @@ export default function LifeInsurancePage() {
       const lifePolicies: LifePolicy[] = clients.map((c: Client) => {
 
         let insurerName = 'Unknown Insurer'
-        const companiesData = c.companies as any
+        const companiesData = c.companies
 
         if (companiesData) {
             if (Array.isArray(companiesData) && companiesData.length > 0) {
                 insurerName = companiesData[0]?.name || 'Unknown Insurer'
-            } else if (typeof companiesData === 'object' && companiesData.name) {
+            } else if (!Array.isArray(companiesData) && typeof companiesData === 'object' && companiesData.name) {
                 insurerName = companiesData.name
             }
         }
@@ -42,7 +52,7 @@ export default function LifeInsurancePage() {
           holderName: c.name,
           contactNumber: c.phone || '',
           email: c.email || '',
-          planType: (c.product_name as any) || 'Term Life',
+          planType: c.product_name || 'Term Life',
           sumAssured: c.sum_insured || 0,
           premiumAmount: c.premium_amount || 0,
           premiumFrequency: 'Yearly', // Defaulting as not in DB
@@ -50,7 +60,7 @@ export default function LifeInsurancePage() {
           maturityDate: c.end_date || new Date(new Date().setFullYear(new Date().getFullYear() + 20)).toISOString(),
           nextDueDate: c.end_date || new Date().toISOString(), // Using end_date as proxy for now
           nominee: 'Not Specified', // Not in DB
-          status: (c.status as any) || 'Active',
+          status: c.status || 'Active',
           insurer: insurerName
         }
       })

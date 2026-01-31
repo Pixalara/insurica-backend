@@ -1,17 +1,27 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import Link from 'next/link'
+import { useState, useEffect, Suspense } from 'react'
 import { Search } from 'lucide-react'
 import { HealthTable } from './_components/health-table'
 import { HealthPolicy } from './types'
 import { getClients, deleteClient } from '../../clients/actions'
 import { Client } from '../../clients/types'
 import { toast } from 'sonner'
-
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 
 export default function HealthInsurancePage() {
+    return (
+        <Suspense fallback={
+            <div className="text-center py-20 bg-slate-50 rounded-xl border border-dashed border-slate-300">
+                <p className="text-slate-500">Loading...</p>
+            </div>
+        }>
+            <HealthInsuranceContent />
+        </Suspense>
+    )
+}
+
+function HealthInsuranceContent() {
     const searchParams = useSearchParams()
     const [policies, setPolicies] = useState<HealthPolicy[]>([])
     const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '')

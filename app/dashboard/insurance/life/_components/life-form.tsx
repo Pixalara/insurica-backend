@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { LifePolicy } from '../types'
 import { X } from 'lucide-react'
 
@@ -11,27 +11,9 @@ interface LifeFormProps {
 }
 
 export function LifeForm({ initialData, onSubmit, onCancel }: LifeFormProps) {
-    const [formData, setFormData] = useState<Omit<LifePolicy, 'id'>>({
-        policyNumber: '',
-        holderName: '',
-        contactNumber: '',
-        email: '',
-        planType: 'Term Life',
-        sumAssured: 0,
-        premiumAmount: 0,
-        premiumFrequency: 'Yearly',
-        startDate: new Date().toISOString().split('T')[0],
-        maturityDate: '',
-        nextDueDate: '',
-        nominee: '',
-        status: 'Active',
-        insurer: '',
-    })
-
-    useEffect(() => {
+    const [formData, setFormData] = useState<Omit<LifePolicy, 'id'>>(() => {
         if (initialData) {
-            // Format dates for input fields if necessary
-            setFormData({
+            return {
                 policyNumber: initialData.policyNumber,
                 holderName: initialData.holderName,
                 contactNumber: initialData.contactNumber,
@@ -46,9 +28,27 @@ export function LifeForm({ initialData, onSubmit, onCancel }: LifeFormProps) {
                 nominee: initialData.nominee,
                 status: initialData.status,
                 insurer: initialData.insurer,
-            })
+            }
         }
-    }, [initialData])
+        return {
+            policyNumber: '',
+            holderName: '',
+            contactNumber: '',
+            email: '',
+            planType: 'Term Life',
+            sumAssured: 0,
+            premiumAmount: 0,
+            premiumFrequency: 'Yearly',
+            startDate: new Date().toISOString().split('T')[0],
+            maturityDate: '',
+            nextDueDate: '',
+            nominee: '',
+            status: 'Active',
+            insurer: '',
+        }
+    })
+
+
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target
