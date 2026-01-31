@@ -1,98 +1,90 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import Link from 'next/link'
+import { useState, useEffect, Suspense } from 'react'
 import { Search } from 'lucide-react'
 import { GeneralTable } from './_components/general-table'
 import { GeneralPolicy } from './types'
+import { getClients, deleteClient } from '../../clients/actions'
+import { Client } from '../../clients/types'
+import { toast } from 'sonner'
 
-// Mock Data for demonstration
-const MOCK_POLICIES: GeneralPolicy[] = [
-    {
-        id: '1',
-        policyNumber: 'GI-2024-001',
-        holderName: 'Rajesh Kumar',
-        contactNumber: '+91 98765 43210',
-        email: 'rajesh.k@example.com',
-        type: 'Health',
-        startDate: '2024-01-15',
-        endDate: '2025-01-14',
-        amountPaid: 15000,
-        sumInsured: 500000,
-        status: 'Active'
-    },
-    {
-        id: '2',
-        policyNumber: 'GI-2024-002',
-        holderName: 'Priya Sharma',
-        contactNumber: '+91 98123 45678',
-        email: 'priya.s@example.com',
-        type: 'Motor',
-        startDate: '2023-11-20',
-        endDate: '2024-11-19',
-        amountPaid: 8500,
-        sumInsured: 300000,
-        status: 'Active'
-    },
-    {
-        id: '3',
-        policyNumber: 'GI-2023-089',
-        holderName: 'Amit Patel',
-        contactNumber: '+91 99887 76655',
-        email: 'amit.p@example.com',
-        type: 'Travel',
-        startDate: '2023-12-01',
-        endDate: '2023-12-15',
-        amountPaid: 2500,
-        sumInsured: 100000,
-        status: 'Expired'
-    },
-    {
-        id: '4',
-        policyNumber: 'GI-2024-015',
-        holderName: 'Sneha Gupta',
-        contactNumber: '+91 98765 12345',
-        email: 'sneha.g@example.com',
-        type: 'Health',
-        startDate: '2024-02-01',
-        endDate: '2025-01-31',
-        amountPaid: 22000,
-        sumInsured: 750000,
-        status: 'Active'
-    }
-]
+import { useRouter, useSearchParams } from 'next/navigation'
 
 export default function GeneralInsurancePage() {
-    const [policies, setPolicies] = useState<GeneralPolicy[]>(MOCK_POLICIES)
-    const [searchQuery, setSearchQuery] = useState('')
+    return (
+        <Suspense fallback={
+            <div className="text-center py-20 bg-slate-50 rounded-xl border border-dashed border-slate-300">
+                <p className="text-slate-500">Loading...</p>
+            </div>
+        }>
+            <GeneralInsuranceContent />
+        </Suspense>
+    )
+}
 
-    // Load clients from storage and merge
-    useEffect(() => {
-        import('../../clients/client-storage').then(({ ClientStorage }) => {
-            const clients = ClientStorage.getClients()
-            const generalClients = clients
-                .filter(c => c.productType === 'General Insurance')
-                .map(c => ({
+function GeneralInsuranceContent() {
+    const searchParams = useSearchParams()
+    const [policies, setPolicies] = useState<GeneralPolicy[]>([])
+    const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '')
+    const [loading, setLoading] = useState(true)
+
+    const fetchPolicies = async () => {
+        try {
+            setLoading(true)
+
+            const { clients } = await getClients({ product: 'General Insurance' })
+            
+            const generalPolicies: GeneralPolicy[] = clients.map((c: Client) => {
+
+                let insurerName = 'Unknown Insurer'
+                const companiesData = c.companies as any
+
+                if (companiesData) {
+                    if (Array.isArray(companiesData) && companiesData.length > 0) {
+                        insurerName = companiesData[0]?.name || 'Unknown Insurer'
+                    } else if (typeof companiesData === 'object' && companiesData.name) {
+                        insurerName = companiesData.name
+                    }
+                }
+
+                return {
                     id: c.id,
-                    policyNumber: `GI-${c.id.substring(0, 8).toUpperCase()}`,
+                    policyNumber: c.policy_number,
                     holderName: c.name,
-                    contactNumber: c.phone,
-                    email: c.email,
-                    type: 'Health' as const, // Default to Health or random as subtype isn't in client yet
-                    startDate: c.created_at || new Date().toISOString(),
-                    endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString(),
-                    amountPaid: 10000,
-                    sumInsured: 300000,
-                    status: (c.policyStatus as any) || 'Active'
-                } as GeneralPolicy))
-
-            setPolicies(prev => {
-                const existingIds = new Set(MOCK_POLICIES.map(p => p.id))
-                const newClients = generalClients.filter(c => !existingIds.has(c.id))
-                return [...MOCK_POLICIES, ...newClients]
+                    contactNumber: c.phone || '',
+                    email: c.email || '',
+                    type: c.product_name || 'General',
+                    insurerName: insurerName || 'Unknown Insurer',
+                    startDate: c.start_date || new Date().toISOString(),
+                    endDate: c.end_date || new Date().toISOString(),
+                    amountPaid: c.premium_amount || 0,
+                    sumInsured: c.sum_insured || 0,
+                    status: (c.status as any) || 'Active'
+                }
             })
-        })
+            
+            setPolicies(generalPolicies)
+        } catch (error) {
+            console.error('Failed to fetch general insurance policies:', error)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    useEffect(() => {
+        fetchPolicies()
     }, [])
+
+    const handleDelete = async (id: string) => {
+        try {
+            await deleteClient(id)
+            setPolicies(policies.filter(p => p.id !== id))
+            toast.success('Policy deleted successfully')
+        } catch (error) {
+            console.error('Failed to delete policy:', error)
+            toast.error('Failed to delete policy')
+        }
+    }
 
     const filteredPolicies = policies.filter(policy =>
         policy.holderName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -122,10 +114,16 @@ export default function GeneralInsurancePage() {
                 />
             </div>
 
-            <GeneralTable
-                policies={filteredPolicies}
-                onDelete={(id) => setPolicies(policies.filter(p => p.id !== id))}
-            />
+            {loading ? (
+                <div className="text-center py-20 bg-slate-50 rounded-xl border border-dashed border-slate-300">
+                    <p className="text-slate-500">Loading policies...</p>
+                </div>
+            ) : (
+                <GeneralTable
+                    policies={filteredPolicies}
+                    onDelete={handleDelete}
+                />
+            )}
         </div>
     )
 }

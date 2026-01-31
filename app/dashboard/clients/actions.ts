@@ -22,7 +22,7 @@ export async function getClients({
 
   let dbQuery = supabase
     .from('clients')
-    .select('*, companies(name)', { count: 'exact' })
+    .select('*', { count: 'exact' })
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1)
 
@@ -35,9 +35,6 @@ export async function getClients({
   }
 
   if (product !== 'All') {
-    // If product filter is applied, we assume it matches the category or product_name
-    // Adjust logic based on exact requirement. Here we match category.
-    // If the user meant "Life Insurance" mapping to "Life" category:
     const categoryMap: Record<string, string> = {
       'Life Insurance': 'Life',
       'General Insurance': 'General',
@@ -51,15 +48,35 @@ export async function getClients({
     }
   }
 
-  const { data, error, count } = await dbQuery
+  const { data: clients, error, count } = await dbQuery
 
   if (error) {
     console.error('Error fetching clients:', error)
     throw new Error('Failed to fetch clients')
   }
 
+  // Manually fetch companies to avoid join errors
+  let clientsWithCompanies = clients
+  if (clients && clients.length > 0) {
+      const companyIds = Array.from(new Set(clients.map((c: any) => c.company_id).filter(Boolean)))
+      if (companyIds.length > 0) {
+          const { data: companies } = await supabase
+              .from('companies')
+              .select('id, name')
+              .in('id', companyIds)
+          
+          if (companies) {
+              const companyMap = new Map(companies.map((c: any) => [c.id, c]))
+              clientsWithCompanies = clients.map((client: any) => ({
+                  ...client,
+                  companies: client.company_id ? [companyMap.get(client.company_id) || { name: 'Unknown' }] : []
+              }))
+          }
+      }
+  }
+
   return {
-    clients: data,
+    clients: clientsWithCompanies,
     totalPages: count ? Math.ceil(count / limit) : 0,
     currentPage: page,
     totalCount: count
@@ -271,12 +288,34 @@ export async function updateClient(id: string, formData: any) {
 
 export async function deleteClient(id: string) {
   const supabase = await createSupabaseClient()
-  const { error } = await supabase.from('clients').delete().eq('id', id)
+  console.log('Attempting to delete client with ID:', id)
+  
+  // First check if the client exists
+  const { data: existingClient, error: fetchError } = await supabase
+    .from('clients')
+    .select('id')
+    .eq('id', id)
+    .single()
+
+  if (fetchError || !existingClient) {
+      console.error('Client not found before delete:', fetchError)
+      throw new Error('Client not found or access denied')
+  }
+
+  const { error, count } = await supabase
+    .from('clients')
+    .delete({ count: 'exact' })
+    .eq('id', id)
 
   if (error) {
     console.error('Error deleting client:', error)
-    throw new Error('Failed to delete client')
+    throw new Error(`Failed to delete client: ${error.message}`)
+  }
+
+  if (count === 0) {
+      throw new Error('Failed to delete client: Policy not found or access denied')
   }
 
   revalidatePath('/dashboard/clients')
+  revalidatePath('/dashboard/insurance/general')
 }

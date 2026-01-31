@@ -28,8 +28,8 @@ export function GeneralTable({ policies, onDelete }: GeneralTableProps) {
                 <thead className="bg-slate-50 text-slate-700 font-medium">
                     <tr>
                         <th className="px-4 py-3">Policy No</th>
-                        <th className="px-4 py-3">Holder Name</th>
-                        <th className="px-4 py-3">Plan Type</th>
+                        <th className="px-4 py-3">Insured Name</th>
+                        <th className="px-4 py-3">Insurer</th>
                         <th className="px-4 py-3">Sum Insured</th>
                         <th className="px-4 py-3">Premium</th>
                         <th className="px-4 py-3">Renewal Date</th>
@@ -45,7 +45,10 @@ export function GeneralTable({ policies, onDelete }: GeneralTableProps) {
                                 <div className="font-medium text-slate-900">{policy.holderName}</div>
                                 <div className="text-xs text-slate-500">{policy.contactNumber}</div>
                             </td>
-                            <td className="px-4 py-3">{policy.type}</td>
+                            <td className="px-4 py-3">
+                                <div className="font-medium text-slate-900">{policy.insurerName}</div>
+                                <div className="text-xs text-slate-500">{policy.type}</div>
+                            </td>
                             <td className="px-4 py-3">₹{policy.sumInsured.toLocaleString()}</td>
                             <td className="px-4 py-3">₹{policy.amountPaid.toLocaleString()}</td>
                             <td className="px-4 py-3">{new Date(policy.endDate).toLocaleDateString()}</td>

@@ -1,24 +1,38 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts'
 
-const data = [
-    { name: 'Health', value: 450000 },
-    { name: 'Motor', value: 300000 },
-    { name: 'Life', value: 250000 },
-    { name: 'General', value: 150000 },
-]
+interface RevenuePieChartProps {
+    data: {
+        name: string
+        value: number
+    }[]
+}
 
-const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#6366F1']
+const COLOR_MAP: Record<string, string> = {
+    'General': '#3B82F6', 
+    'Health': '#10B981', 
+    'Life': '#F59E0B',    
+}
+const DEFAULT_COLOR = '#6366F1' 
 
 const formatCurrency = (value: number) =>
     new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(value)
 
-export function RevenuePieChart() {
+export function RevenuePieChart({ data }: RevenuePieChartProps) {
+    const [mounted, setMounted] = useState(false)
+
+    useEffect(() => {
+        setMounted(true)
+    }, [])
+
+    if (!mounted) return <div className="h-[400px] w-full bg-white p-4 rounded-xl border border-slate-200" />
+
     return (
-        <div className="h-[400px] w-full bg-white p-4 rounded-xl border border-slate-200 flex flex-col">
+        <div className="h-[400px] w-full min-w-0 bg-white p-4 rounded-xl border border-slate-200 flex flex-col">
             <h3 className="text-lg font-bold text-slate-800 mb-4 px-2">Revenue Distribution</h3>
-            <div className="flex-1 min-h-0">
+            <div className="h-[320px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                         <Pie
@@ -29,7 +43,7 @@ export function RevenuePieChart() {
                             dataKey="value"
                         >
                             {data.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                <Cell key={`cell-${index}`} fill={COLOR_MAP[entry.name] || DEFAULT_COLOR} />
                             ))}
                         </Pie>
                         <Tooltip

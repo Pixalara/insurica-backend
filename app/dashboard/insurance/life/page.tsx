@@ -1,103 +1,81 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Plus, Search } from 'lucide-react'
+import { useState, useEffect, Suspense } from 'react'
+import { Search } from 'lucide-react'
 import { LifeTable } from './_components/life-table'
-import { LifeForm } from './_components/life-form'
 import { LifePolicy } from './types'
-
-// Mock Data
-const MOCK_DATA: LifePolicy[] = [
-  {
-    id: '1',
-    policyNumber: 'LIC-78901234',
-    holderName: 'Rajesh Kumar',
-    contactNumber: '+91 98765 43210',
-    email: 'rajesh.k@example.com',
-    planType: 'Endowment',
-    sumAssured: 1000000,
-    premiumAmount: 25000,
-    premiumFrequency: 'Yearly',
-    startDate: '2020-05-15',
-    maturityDate: '2040-05-15',
-    nextDueDate: '2024-05-15',
-    nominee: 'Sunita Kumar',
-    status: 'Active',
-    insurer: 'LIC'
-  },
-  {
-    id: '2',
-    policyNumber: 'HDFC-LIFE-456',
-    holderName: 'Priya Sharma',
-    contactNumber: '+91 98123 45678',
-    email: 'priya.s@example.com',
-    planType: 'Term Life',
-    sumAssured: 10000000,
-    premiumAmount: 12000,
-    premiumFrequency: 'Yearly',
-    startDate: '2022-01-10',
-    maturityDate: '2052-01-10',
-    nextDueDate: '2024-01-10',
-    nominee: 'Rahul Sharma',
-    status: 'Active',
-    insurer: 'HDFC Life'
-  },
-  {
-    id: '3',
-    policyNumber: 'SBI-SMART-999',
-    holderName: 'Amit Patel',
-    contactNumber: '+91 76543 21098',
-    email: 'amit.p@example.com',
-    planType: 'ULIP',
-    sumAssured: 500000,
-    premiumAmount: 5000,
-    premiumFrequency: 'Monthly',
-    startDate: '2023-08-01',
-    maturityDate: '2033-08-01',
-    nextDueDate: '2024-03-01',
-    nominee: 'Sneha Patel',
-    status: 'Grace Period',
-    insurer: 'SBI Life'
-  }
-]
+import { getClients, deleteClient } from '../../clients/actions'
+import { Client } from '../../clients/types'
+import { toast } from 'sonner'
+import { useSearchParams } from 'next/navigation'
 
 export default function LifeInsurancePage() {
-  const [policies, setPolicies] = useState<LifePolicy[]>(MOCK_DATA)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [isFormOpen, setIsFormOpen] = useState(false)
-  const [editingPolicy, setEditingPolicy] = useState<LifePolicy | null>(null)
+    return (
+        <Suspense fallback={
+            <div className="text-center py-20 bg-slate-50 rounded-xl border border-dashed border-slate-300">
+                <p className="text-slate-500">Loading...</p>
+            </div>
+        }>
+            <LifeInsuranceContent />
+        </Suspense>
+    )
+}
 
-  // Load clients from storage and merge
-  useEffect(() => {
-    import('../../clients/client-storage').then(({ ClientStorage }) => {
-      const clients = ClientStorage.getClients()
-      const lifeClients = clients
-        .filter(c => c.productType === 'Life Insurance')
-        .map(c => ({
+function LifeInsuranceContent() {
+  const searchParams = useSearchParams()
+  const [policies, setPolicies] = useState<LifePolicy[]>([])
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '')
+  const [loading, setLoading] = useState(true)
+
+  const fetchPolicies = async () => {
+    try {
+      setLoading(true)
+
+      const { clients } = await getClients({ product: 'Life Insurance' })
+      
+      const lifePolicies: LifePolicy[] = clients.map((c: Client) => {
+
+        let insurerName = 'Unknown Insurer'
+        const companiesData = c.companies
+
+        if (companiesData) {
+            if (Array.isArray(companiesData) && companiesData.length > 0) {
+                insurerName = companiesData[0]?.name || 'Unknown Insurer'
+            } else if (!Array.isArray(companiesData) && typeof companiesData === 'object' && companiesData.name) {
+                insurerName = companiesData.name
+            }
+        }
+
+        return {
           id: c.id,
-          policyNumber: `POL-${c.id.substring(0, 8).toUpperCase()}`,
+          policyNumber: c.policy_number,
           holderName: c.name,
-          contactNumber: c.phone,
-          email: c.email,
-          planType: 'Term Life' as const,
-          sumAssured: 5000000,
-          premiumAmount: 15000,
-          premiumFrequency: 'Yearly' as const,
-          startDate: c.created_at || new Date().toISOString(),
-          maturityDate: new Date(new Date().setFullYear(new Date().getFullYear() + 20)).toISOString(),
-          nextDueDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString(),
-          nominee: 'Nominee Name',
-          status: (c.policyStatus as any) || 'Active',
-          insurer: c.insurer || 'LIC'
-        } as LifePolicy))
-
-      // Merge with mock data, avoiding duplicates if IDs conflict (though mock IDs are '1', '2' etc)
-      setPolicies(prev => {
-        const existingIds = new Set(MOCK_DATA.map(p => p.id))
-        const newClients = lifeClients.filter(c => !existingIds.has(c.id))
-        return [...MOCK_DATA, ...newClients]
+          contactNumber: c.phone || '',
+          email: c.email || '',
+          planType: c.product_name || 'Term Life',
+          sumAssured: c.sum_insured || 0,
+          premiumAmount: c.premium_amount || 0,
+          premiumFrequency: 'Yearly', // Defaulting as not in DB
+          startDate: c.start_date || new Date().toISOString(),
+          maturityDate: c.end_date || new Date(new Date().setFullYear(new Date().getFullYear() + 20)).toISOString(),
+          nextDueDate: c.end_date || new Date().toISOString(), // Using end_date as proxy for now
+          nominee: 'Not Specified', // Not in DB
+          status: c.status || 'Active',
+          insurer: insurerName
+        }
       })
-    })
+      
+      setPolicies(lifePolicies)
+    } catch (error) {
+      console.error('Failed to fetch life insurance policies:', error)
+      toast.error('Failed to fetch policies')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchPolicies()
   }, [])
 
   const filteredPolicies = policies.filter(policy =>
@@ -106,39 +84,15 @@ export default function LifeInsurancePage() {
     policy.policyNumber.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  const handleCreate = (data: Omit<LifePolicy, 'id'>) => {
-    const newPolicy: LifePolicy = {
-      ...data,
-      id: Math.random().toString(36).substr(2, 9)
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteClient(id)
+      setPolicies(policies.filter(p => p.id !== id))
+      toast.success('Policy deleted successfully')
+    } catch (error) {
+      console.error('Failed to delete policy:', error)
+      toast.error('Failed to delete policy')
     }
-    setPolicies([newPolicy, ...policies])
-    setIsFormOpen(false)
-  }
-
-  const handleUpdate = (data: Omit<LifePolicy, 'id'>) => {
-    if (!editingPolicy) return
-
-    setPolicies(policies.map(p =>
-      p.id === editingPolicy.id
-        ? { ...data, id: editingPolicy.id }
-        : p
-    ))
-    setEditingPolicy(null)
-    setIsFormOpen(false)
-  }
-
-  const handleDelete = (id: string) => {
-    setPolicies(policies.filter(p => p.id !== id))
-  }
-
-  const openCreateModal = () => {
-    setEditingPolicy(null)
-    setIsFormOpen(true)
-  }
-
-  const openEditModal = (policy: LifePolicy) => {
-    setEditingPolicy(policy)
-    setIsFormOpen(true)
   }
 
   return (
@@ -148,7 +102,6 @@ export default function LifeInsurancePage() {
           <h1 className="text-2xl font-bold text-slate-900">Life Insurance</h1>
           <p className="text-slate-500 text-sm">Manage life insurance policies, premiums, and renewals.</p>
         </div>
-
       </div>
 
       {/* Search Bar */}
@@ -163,20 +116,14 @@ export default function LifeInsurancePage() {
         />
       </div>
 
-      <LifeTable
-        policies={filteredPolicies}
-        onEdit={openEditModal}
-        onDelete={handleDelete}
-      />
-
-      {isFormOpen && (
-        <LifeForm
-          initialData={editingPolicy}
-          onSubmit={editingPolicy ? handleUpdate : handleCreate}
-          onCancel={() => {
-            setIsFormOpen(false)
-            setEditingPolicy(null)
-          }}
+      {loading ? (
+        <div className="text-center py-20 bg-slate-50 rounded-xl border border-dashed border-slate-300">
+            <p className="text-slate-500">Loading policies...</p>
+        </div>
+      ) : (
+        <LifeTable
+            policies={filteredPolicies}
+            onDelete={handleDelete}
         />
       )}
     </div>

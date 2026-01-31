@@ -4,14 +4,14 @@ export interface LifePolicy {
   holderName: string
   contactNumber: string
   email: string
-  planType: 'Term Life' | 'Whole Life' | 'Endowment' | 'ULIP'
+  planType: string
   sumAssured: number
   premiumAmount: number
-  premiumFrequency: 'Monthly' | 'Quarterly' | 'Half-Yearly' | 'Yearly'
+  premiumFrequency: string
   startDate: string // ISO date string
   maturityDate: string // ISO date string
   nextDueDate: string // ISO date string
   nominee: string
-  status: 'Active' | 'Lapsed' | 'Grace Period' | 'Matured'
+  status: string
   insurer: string
 }

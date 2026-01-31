@@ -28,8 +28,8 @@ export function HealthTable({ policies, onDelete }: HealthTableProps) {
                 <thead className="bg-slate-50 text-slate-700 font-medium">
                     <tr>
                         <th className="px-4 py-3">Policy No</th>
-                        <th className="px-4 py-3">Holder Name</th>
-                        <th className="px-4 py-3">Plan Type</th>
+                        <th className="px-4 py-3">Insured Name</th>
+                        <th className="px-4 py-3">Insurer</th>
                         <th className="px-4 py-3">Sum Insured</th>
                         <th className="px-4 py-3">Premium</th>
                         <th className="px-4 py-3">Renewal Date</th>
@@ -40,16 +40,15 @@ export function HealthTable({ policies, onDelete }: HealthTableProps) {
                 <tbody className="divide-y divide-slate-200 bg-white">
                     {policies.map((policy) => (
                         <tr key={policy.id} className="hover:bg-slate-50 transition-colors">
-                            <td className="px-4 py-3 font-medium text-slate-900">
-                                <Link href={`/dashboard/insurance/health/${policy.id}`} className="hover:text-blue-600 hover:underline">
-                                    {policy.policyNumber}
-                                </Link>
-                            </td>
+                            <td className="px-4 py-3 font-medium text-slate-900">{policy.policyNumber}</td>
                             <td className="px-4 py-3">
                                 <div className="font-medium text-slate-900">{policy.holderName}</div>
                                 <div className="text-xs text-slate-500">{policy.contactNumber}</div>
                             </td>
-                            <td className="px-4 py-3">{policy.planType}</td>
+                            <td className="px-4 py-3">
+                                <div className="font-medium text-slate-900">{policy.insurer}</div>
+                                <div className="text-xs text-slate-500">{policy.planType}</div>
+                            </td>
                             <td className="px-4 py-3">₹{policy.sumInsured.toLocaleString()}</td>
                             <td className="px-4 py-3">₹{policy.premiumAmount.toLocaleString()}</td>
                             <td className="px-4 py-3">

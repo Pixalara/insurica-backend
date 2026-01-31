@@ -6,8 +6,9 @@ import Link from 'next/link'
 import { ArrowLeft, Trash2, Edit2, Save, X } from 'lucide-react'
 import { getClient, updateClient, deleteClient, getCompanies } from '../../../../clients/actions'
 import { toast } from 'sonner'
+import { Client } from '../../../../clients/types'
 
-export default function EditHealthPolicyPage({ params }: { params: Promise<{ id: string }> }) {
+export default function EditLifePolicyPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params)
     const router = useRouter()
 
@@ -37,9 +38,10 @@ export default function EditHealthPolicyPage({ params }: { params: Promise<{ id:
     useEffect(() => {
         const loadData = async () => {
             try {
-                // Fetch companies for 'Health' category
-                const companiesData = await getCompanies('Health')
+
+                const companiesData = await getCompanies('Life')
                 setCompanies(companiesData || [])
+
 
                 const client = await getClient(id)
                 if (client) {
@@ -59,7 +61,7 @@ export default function EditHealthPolicyPage({ params }: { params: Promise<{ id:
                     })
                 } else {
                     toast.error('Policy not found')
-                    router.push('/dashboard/insurance/health')
+                    router.push('/dashboard/insurance/life')
                 }
             } catch (error) {
                 console.error('Error loading data:', error)
@@ -107,7 +109,7 @@ export default function EditHealthPolicyPage({ params }: { params: Promise<{ id:
                 email: formData.email || null,
                 phone: formData.contactNumber || null,
                 policy_number: formData.policyNumber,
-                category: 'Health', // Hardcoded for Health section
+                category: 'Life',
                 company_id: formData.companyId,
                 product_name: formData.productName,
                 sum_insured: formData.sumInsured,
@@ -135,7 +137,7 @@ export default function EditHealthPolicyPage({ params }: { params: Promise<{ id:
         try {
              await deleteClient(id)
              toast.success('Policy deleted successfully')
-             router.push('/dashboard/insurance/health')
+             router.push('/dashboard/insurance/life')
         } catch (error) {
             console.error('Error deleting policy:', error)
             toast.error('Failed to delete policy')
@@ -153,10 +155,10 @@ export default function EditHealthPolicyPage({ params }: { params: Promise<{ id:
         <div className="max-w-3xl mx-auto">
             <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
-                    <Link href="/dashboard/insurance/health" className="text-slate-500 hover:text-slate-800 gap-2 mb-2 inline-flex items-center">
+                    <Link href="/dashboard/insurance/life" className="text-slate-500 hover:text-slate-800 gap-2 mb-2 inline-flex items-center">
                         <ArrowLeft className="w-4 h-4" /> Back to Policies
                     </Link>
-                    <h1 className="text-2xl font-bold text-slate-900">Health Policy Details</h1>
+                    <h1 className="text-2xl font-bold text-slate-900">Policy Details</h1>
                 </div>
                 {!isEditing && (
                     <div className="flex gap-3">
@@ -252,7 +254,7 @@ export default function EditHealthPolicyPage({ params }: { params: Promise<{ id:
                         </div>
 
                         <div className="md:col-span-1">
-                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Product / Plan</label>
+                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Product Opted</label>
                              <input
                                 required
                                 name="productName"
@@ -343,7 +345,7 @@ export default function EditHealthPolicyPage({ params }: { params: Promise<{ id:
                             >
                                 <option value="Active">Active</option>
                                 <option value="Inactive">Inactive</option>
-                                <option value="Expired">Expired</option>
+                                <option value="Expired">Matured/Expired</option>
                             </select>
                         </div>
                     </div>
