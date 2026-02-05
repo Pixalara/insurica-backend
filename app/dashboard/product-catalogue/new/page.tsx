@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createProduct } from '../actions'
+import { createProduct } from '../actions'//create product action
 import { toast } from 'sonner'
 import type { ProductFormData } from '../types'
 
