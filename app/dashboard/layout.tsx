@@ -1,6 +1,5 @@
 "use client"
 import Link from 'next/link'
-import { useState } from 'react';
 import LogoutButton from '../../components/ui/LogoutButton'
 
 
@@ -9,7 +8,6 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
-  const [openInsurance, setOpenInsurance] = useState(false);
 
   return (
     <div className="flex min-h-screen bg-slate-50">
@@ -23,12 +21,12 @@ export default function DashboardLayout({
         </div>
 
         <nav className="flex-1 space-y-2">
-          {/* Overview */}
+          {/* Dashboard */}
           <Link
             href="/dashboard"
             className="block p-3 hover:bg-slate-800 rounded-xl transition-colors font-medium cursor-pointer select-none"
           >
-            Overview
+            Dashboard
           </Link>
 
           {/* Clients */}
@@ -39,46 +37,29 @@ export default function DashboardLayout({
             Clients
           </Link>
 
-          {/* Insurance Dropdown */}
-          <div>
-            <button
-              onClick={() => setOpenInsurance(!openInsurance)}
-              className="w-full flex justify-between items-center p-3 hover:bg-slate-800 rounded-xl transition-colors font-medium cursor-pointer select-none"
-            >
-              Insurance
-              <span
-                className={`transition-transform ${openInsurance ? "rotate-180" : ""
-                  }`}
-              >
-                ▼
-              </span>
-            </button>
+          {/* Product Catalogue */}
+          <Link
+            href="/dashboard/product-catalogue"
+            className="block p-3 hover:bg-slate-800 rounded-xl transition-colors font-medium cursor-pointer select-none"
+          >
+            Product Catalogue
+          </Link>
 
-            {openInsurance && (
-              <div className="ml-4 mt-2 space-y-1">
-                <Link
-                  href="/dashboard/insurance/general"
-                  className="block p-2 hover:bg-slate-800 rounded-lg transition-colors text-sm cursor-pointer select-none"
-                >
-                  General Insurance
-                </Link>
+          {/* Policies */}
+          <Link
+            href="/dashboard/policies"
+            className="block p-3 hover:bg-slate-800 rounded-xl transition-colors font-medium cursor-pointer select-none"
+          >
+            Policies
+          </Link>
 
-                <Link
-                  href="/dashboard/insurance/health"
-                  className="block p-2 hover:bg-slate-800 rounded-lg transition-colors text-sm cursor-pointer select-none"
-                >
-                  Health Insurance
-                </Link>
-
-                <Link
-                  href="/dashboard/insurance/life"
-                  className="block p-2 hover:bg-slate-800 rounded-lg transition-colors text-sm cursor-pointer select-none"
-                >
-                  Life Insurance
-                </Link>
-              </div>
-            )}
-          </div>
+          {/* Renewals */}
+          <Link
+            href="/dashboard/renewals"
+            className="block p-3 hover:bg-slate-800 rounded-xl transition-colors font-medium cursor-pointer select-none"
+          >
+            Renewals
+          </Link>
 
           {/* Lead Management */}
           <Link

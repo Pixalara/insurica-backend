@@ -99,6 +99,36 @@ export async function getClient(id: string) {
   return data
 }
 
+/**
+ * Find customer by phone number for Universal Customer ID lookup
+ * Returns customer data if found, null if not found
+ */
+export async function findCustomerByPhone(phone: string) {
+  const supabase = await createSupabaseClient()
+  
+  // Clean phone number (remove spaces, dashes, etc.)
+  const cleanPhone = phone.replace(/[\s-()]/g, '')
+  
+  const { data, error } = await supabase
+    .from('clients')
+    .select('id, name, email, phone, created_at')
+    .or(`phone.eq.${phone},phone.eq.${cleanPhone}`)
+    .limit(1)
+    .single()
+
+  if (error) {
+    if (error.code === 'PGRST116') {
+      // No rows returned - customer not found
+      return { found: false, customer: null }
+    }
+    console.error('Error searching customer by phone:', error)
+    return { found: false, customer: null, error: error.message }
+  }
+
+  return { found: true, customer: data }
+}
+
+
 export async function getCompanies(type?: 'General' | 'Health' | 'Life') {
   const supabase = await createSupabaseClient()
   let query = supabase.from('companies').select('id, name, type').order('name')
