@@ -65,26 +65,26 @@ export function RenewalTable({ renewals }: RenewalTableProps) {
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                         {renewals.map((renewal) => (
-                            <tr key={renewal.id} className="hover:bg-slate-50 transition-colors">
+                            <tr key={renewal.policy_id} className="hover:bg-slate-50 transition-colors">
                                 <td className="px-6 py-4">
-                                    <div className="font-semibold text-slate-900">{renewal.policy_number}</div>
+                                    <div className="font-semibold text-slate-900">{renewal.policy_number || 'N/A'}</div>
                                 </td>
                                 <td className="px-6 py-4">
-                                    <div className="font-medium text-slate-900">{renewal.name}</div>
-                                    <div className="text-xs text-slate-500">{renewal.email}</div>
+                                    <div className="font-medium text-slate-900">{renewal.customer?.full_name || 'Unknown'}</div>
+                                    <div className="text-xs text-slate-500">{renewal.customer?.email || 'No email'}</div>
                                 </td>
                                 <td className="px-6 py-4">
-                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${renewal.category?.includes('Health')
+                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${renewal.policy_type === 'Health'
                                             ? 'bg-green-100 text-green-800'
-                                            : renewal.category?.includes('Life')
+                                            : renewal.policy_type === 'Life'
                                                 ? 'bg-purple-100 text-purple-800'
                                                 : 'bg-blue-100 text-blue-800'
                                         }`}>
-                                        {renewal.category}
+                                        {renewal.policy_type}
                                     </span>
                                 </td>
                                 <td className="px-6 py-4 text-sm font-semibold text-slate-900">
-                                    {formatCurrency(renewal.premium_amount)}
+                                    {formatCurrency(renewal.premium || 0)}
                                 </td>
                                 <td className="px-6 py-4 text-sm text-slate-900 font-medium">
                                     {renewal.end_date ? format(new Date(renewal.end_date), 'MMM dd, yyyy') : '-'}
@@ -99,14 +99,14 @@ export function RenewalTable({ renewals }: RenewalTableProps) {
                                 </td>
                                 <td className="px-6 py-4 text-right space-x-2">
                                     <Link
-                                        href={`/dashboard/policies/${renewal.id}/edit`}
+                                        href={`/dashboard/policies/${renewal.policy_id}/edit`}
                                         className="text-blue-600 hover:text-blue-800 text-sm font-medium"
                                     >
                                         Renew
                                     </Link>
                                     <a
-                                        href={`mailto:${renewal.email}`}
-                                        className="text-green-600 hover:text-green-800 text-sm font-medium"
+                                        href={renewal.customer?.email ? `mailto:${renewal.customer.email}` : '#'}
+                                        className={`text-green-600 hover:text-green-800 text-sm font-medium ${!renewal.customer?.email && 'opacity-50 cursor-not-allowed'}`}
                                     >
                                         Contact
                                     </a>

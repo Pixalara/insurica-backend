@@ -8,10 +8,13 @@ export async function getRenewals(filter: RenewalFilter = '30') {
   const supabase = await createClient()
   const now = new Date()
 
-  // Fetch all active policies
+  // Fetch all active policies with customer data
   const { data, error } = await supabase
-    .from('clients')
-    .select('*')
+    .from('policies')
+    .select(`
+      *,
+      customer:customers(full_name, mobile_number, email)
+    `)
     .eq('status', 'Active')
     .order('end_date', { ascending: true })
 
@@ -21,13 +24,30 @@ export async function getRenewals(filter: RenewalFilter = '30') {
   }
 
   // Calculate days to expiry and filter
-  const renewalsWithDays = (data || []).map((policy: any) => {
+  const renewalsWithDays = (data || []).map((policy) => {
     const endDate = new Date(policy.end_date)
     const daysToExpiry = differenceInDays(endDate, now)
     return {
-      ...policy,
+      policy_id: policy.policy_id,
+      customer_id: policy.customer_id,
+      policy_number: policy.policy_number,
+      product: policy.product,
+      insurance_company: policy.insurance_company,
+      policy_type: policy.policy_type,
+      premium: policy.premium,
+      start_date: policy.start_date,
+      end_date: policy.end_date,
+      status: policy.status,
       days_to_expiry: daysToExpiry,
-    } as Renewal
+      customer: policy.customer,
+      // Legacy fields for backward compatibility
+      name: policy.customer?.full_name || 'Unknown',
+      email: policy.customer?.email || '',
+      phone: policy.customer?.mobile_number || '',
+      category: policy.policy_type,
+      insurer: policy.insurance_company,
+      premium_amount: policy.premium
+    } as Renewal & { name: string; email: string; phone: string; category: string; insurer: string; premium_amount: number }
   })
 
   // Calculate stats
@@ -39,7 +59,7 @@ export async function getRenewals(filter: RenewalFilter = '30') {
   }
 
   // Apply filter
-  let filteredRenewals: Renewal[] = []
+  let filteredRenewals: typeof renewalsWithDays = []
   
   switch (filter) {
     case '30':
@@ -68,13 +88,13 @@ export async function markAsRenewed(policyId: string, newEndDate: string) {
   const supabase = await createClient()
 
   const { data, error } = await supabase
-    .from('clients')
+    .from('policies')
     .update({
       start_date: new Date().toISOString().split('T')[0],
       end_date: newEndDate,
       updated_at: new Date().toISOString(),
     })
-    .eq('id', policyId)
+    .eq('policy_id', policyId)
     .select()
     .single()
 

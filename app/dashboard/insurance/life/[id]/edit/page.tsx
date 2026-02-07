@@ -49,7 +49,7 @@ export default function EditLifePolicyPage({ params }: { params: Promise<{ id: s
                         holderName: client.name,
                         contactNumber: client.phone || '',
                         email: client.email || '',
-                        companyId: client.company_id,
+                        companyId: client.insurance_company || '',
                         productName: client.product_name || '',
                         policyNumber: client.policy_number,
                         startDate: client.start_date || '',
@@ -57,7 +57,7 @@ export default function EditLifePolicyPage({ params }: { params: Promise<{ id: s
                         premium: client.premium_amount?.toString() || '',
                         sumInsured: client.sum_insured?.toString() || '',
                         status: client.status || 'Active',
-                        notes: client.notes || ''
+                        notes: client.remarks || ''
                     })
                 } else {
                     toast.error('Policy not found')
@@ -110,7 +110,7 @@ export default function EditLifePolicyPage({ params }: { params: Promise<{ id: s
                 phone: formData.contactNumber || null,
                 policy_number: formData.policyNumber,
                 category: 'Life',
-                company_id: formData.companyId,
+                insurance_company: formData.companyId,
                 product_name: formData.productName,
                 sum_insured: formData.sumInsured,
                 premium_amount: formData.premium,
@@ -344,7 +344,7 @@ export default function EditLifePolicyPage({ params }: { params: Promise<{ id: s
                                 onChange={handleChange}
                             >
                                 <option value="Active">Active</option>
-                                <option value="Inactive">Inactive</option>
+                                <option value="Cancelled">Cancelled</option>
                                 <option value="Expired">Matured/Expired</option>
                             </select>
                         </div>

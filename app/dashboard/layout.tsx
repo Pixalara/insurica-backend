@@ -1,13 +1,30 @@
 "use client"
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import LogoutButton from '../../components/ui/LogoutButton'
-
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const pathname = usePathname()
+
+  const navItems = [
+    { name: 'Dashboard', href: '/dashboard', exact: true },
+    { name: 'Clients', href: '/dashboard/clients' },
+    { name: 'Product Catalogue', href: '/dashboard/product-catalogue' },
+    { name: 'Policies', href: '/dashboard/policies' },
+    { name: 'Renewals', href: '/dashboard/renewals' },
+    { name: 'Lead Management', href: '/dashboard/leads' },
+  ]
+
+  const isActive = (item: { href: string; exact?: boolean }) => {
+    if (item.exact) {
+      return pathname === item.href
+    }
+    return pathname.startsWith(item.href)
+  }
 
   return (
     <div className="flex min-h-screen bg-slate-50">
@@ -21,53 +38,22 @@ export default function DashboardLayout({
         </div>
 
         <nav className="flex-1 space-y-2">
-          {/* Dashboard */}
-          <Link
-            href="/dashboard"
-            className="block p-3 hover:bg-slate-800 rounded-xl transition-colors font-medium cursor-pointer select-none"
-          >
-            Dashboard
-          </Link>
-
-          {/* Clients */}
-          <Link
-            href="/dashboard/clients"
-            className="block p-3 hover:bg-slate-800 rounded-xl transition-colors font-medium cursor-pointer select-none"
-          >
-            Clients
-          </Link>
-
-          {/* Product Catalogue */}
-          <Link
-            href="/dashboard/product-catalogue"
-            className="block p-3 hover:bg-slate-800 rounded-xl transition-colors font-medium cursor-pointer select-none"
-          >
-            Product Catalogue
-          </Link>
-
-          {/* Policies */}
-          <Link
-            href="/dashboard/policies"
-            className="block p-3 hover:bg-slate-800 rounded-xl transition-colors font-medium cursor-pointer select-none"
-          >
-            Policies
-          </Link>
-
-          {/* Renewals */}
-          <Link
-            href="/dashboard/renewals"
-            className="block p-3 hover:bg-slate-800 rounded-xl transition-colors font-medium cursor-pointer select-none"
-          >
-            Renewals
-          </Link>
-
-          {/* Lead Management */}
-          <Link
-            href="/dashboard/leads"
-            className="block p-3 hover:bg-slate-800 rounded-xl transition-colors font-medium cursor-pointer select-none"
-          >
-            Lead Management
-          </Link>
+          {navItems.map((item) => {
+            const active = isActive(item)
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`block p-3 rounded-xl transition-all font-medium cursor-pointer select-none border-l-4 ${
+                  active 
+                    ? 'bg-blue-600/10 text-blue-400 border-blue-500 shadow-inner' 
+                    : 'text-slate-400 border-transparent hover:bg-slate-800 hover:text-white'
+                }`}
+              >
+                {item.name}
+              </Link>
+            )
+          })}
         </nav>
 
         {/* Logout Option integrated here */}

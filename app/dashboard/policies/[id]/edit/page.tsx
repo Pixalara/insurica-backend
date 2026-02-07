@@ -1,7 +1,7 @@
 'use client'
 
 import { use, useState, useEffect } from 'react'
-import { getClient, updateClient, getCompanies } from '../../actions'
+import { getClient, updateClient, getCompanies } from '../../../clients/actions'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
@@ -15,7 +15,7 @@ type Company = {
   type: 'General' | 'Health' | 'Life'
 }
 
-export default function EditClientPage({ params }: { params: Promise<{ id: string }> }) {
+export default function EditPolicyPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -39,14 +39,10 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
   const [premiumAmount, setPremiumAmount] = useState('')
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
-  const [policyDuration, setPolicyDuration] = useState('')
   const [notes, setNotes] = useState('')
   const [status, setStatus] = useState('Active')
 
-  const [initialLoad, setInitialLoad] = useState(true)
-
   const router = useRouter()
-
 
   useEffect(() => {
     async function fetchClient() {
@@ -64,20 +60,17 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
         setPhone(client.phone || '')
         setCategory(client.category)
         setInsuranceCompany(client.insurance_company || '')
-        // Try to match company by name if companies are loaded
-        setSelectedCompanyId('')
         setProductName(client.product_name || '')
         setSumInsured(client.sum_insured?.toString() || '')
         setPremiumAmount(client.premium_amount?.toString() || '')
         setStartDate(client.start_date || '')
         setEndDate(client.end_date || '')
-        setPolicyDuration('')
         setNotes(client.remarks || '')
         setStatus(client.status || 'Active')
 
       } catch (error) {
-        console.error('Error loading client:', error)
-        toast.error('Failed to load client details')
+        console.error('Error loading policy:', error)
+        toast.error('Failed to load policy details')
       } finally {
         setLoading(false)
       }
@@ -88,7 +81,6 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
     }
   }, [id])
 
-
   useEffect(() => {
     async function fetchCompanies() {
       if (!category) {
@@ -98,9 +90,8 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
 
       try {
         const data = await getCompanies(category)
-        setCompanies(data as any[]) 
+        setCompanies(data as Company[]) 
         
-        // After fetching companies, try to match the existing insuranceCompany name to an ID
         if (insuranceCompany && data) {
           const match = (data as Company[]).find(c => 
             c.name.toLowerCase() === insuranceCompany.toLowerCase()
@@ -117,8 +108,8 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
     fetchCompanies()
   }, [category, insuranceCompany])
 
-  // Auto-calculate duration
-  useEffect(() => {
+  // Derive duration during render
+  const calculateDuration = () => {
     if (startDate && endDate) {
       const start = new Date(startDate)
       const end = new Date(endDate)
@@ -128,14 +119,16 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
       if (!isNaN(diffDays)) {
         if (diffDays >= 365) {
           const years = (diffDays / 365).toFixed(1)
-          setPolicyDuration(`${years} Year(s)`)
+          return `${years} Year(s)`
         } else {
-          setPolicyDuration(`${diffDays} Days`)
+          return `${diffDays} Days`
         }
       }
     }
-  }, [startDate, endDate])
+    return ''
+  }
 
+  const policyDuration = calculateDuration()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -150,7 +143,7 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
     }
 
     setSaving(true)
-    const toastId = toast.loading('Updating client/policy...')
+    const toastId = toast.loading('Updating policy...')
 
     try {
       const formData = {
@@ -172,11 +165,12 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
 
       await updateClient(id, formData)
 
-      toast.success('Client updated successfully', { id: toastId })
-      router.push('/dashboard/clients')
-    } catch (error: any) {
+      toast.success('Policy updated successfully', { id: toastId })
+      router.push('/dashboard/policies')
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       console.error('Update error', error)
-      toast.error('Failed to update client: ' + error.message, { id: toastId })
+      toast.error('Failed to update: ' + errorMessage, { id: toastId })
       setSaving(false)
     }
   }
@@ -192,9 +186,9 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
   if (notFound) {
     return (
       <div className="p-10 text-center">
-        <h2 className="text-2xl font-bold text-slate-800">Client Not Found</h2>
-        <Link href="/dashboard/clients" className="text-blue-600 mt-4 inline-block hover:underline">
-          Back to Directory
+        <h2 className="text-2xl font-bold text-slate-800">Policy Not Found</h2>
+        <Link href="/dashboard/policies" className="text-blue-600 mt-4 inline-block hover:underline">
+          Back to Policies
         </Link>
       </div>
     )
@@ -203,11 +197,11 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
   return (
     <div className="max-w-3xl mx-auto pb-10">
       <div className="mb-6">
-        <Link href="/dashboard/clients" className="text-slate-500 hover:text-slate-800 gap-2 mb-2 inline-flex items-center">
-          <ArrowLeft className="w-4 h-4" /> Back to Directory
+        <Link href="/dashboard/policies" className="text-slate-500 hover:text-slate-800 gap-2 mb-2 inline-flex items-center">
+          <ArrowLeft className="w-4 h-4" /> Back to Policies
         </Link>
-        <h1 className="text-2xl font-bold text-slate-900">Edit Client / Policy</h1>
-        <p className="text-slate-500 text-sm mt-1">Update client and policy details.</p>
+        <h1 className="text-2xl font-bold text-slate-900">Edit Policy</h1>
+        <p className="text-slate-500 text-sm mt-1">Update customer and policy details.</p>
       </div>
 
       <form onSubmit={handleSubmit} className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-6">
@@ -391,7 +385,7 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
             disabled={saving}
             className="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm"
           >
-            {saving ? 'Updating...' : 'Update Client'}
+            {saving ? 'Updating...' : 'Update Policy'}
           </button>
           <button
             type="button"

@@ -25,7 +25,8 @@ const transactionColumns = [
             let colorClass = 'bg-slate-100 text-slate-800' // Default / Inactive
 
             if (status === 'active') colorClass = 'bg-green-100 text-green-800'
-            else if (status === 'expired') colorClass = 'bg-red-100 text-red-800'
+            else if (status === 'expired') colorClass = 'bg-orange-100 text-orange-800'
+            else if (status === 'cancelled') colorClass = 'bg-slate-100 text-slate-800'
             
             return (
                 <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium capitalize ${colorClass}`}>

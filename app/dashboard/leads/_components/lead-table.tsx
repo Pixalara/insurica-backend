@@ -69,9 +69,6 @@ export function LeadTable({ leads }: LeadTableProps) {
                                 Interest
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">
-                                Source
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">
                                 Status
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">
@@ -93,10 +90,7 @@ export function LeadTable({ leads }: LeadTableProps) {
                                     <div className="text-xs text-slate-500">{lead.phone}</div>
                                 </td>
                                 <td className="px-6 py-4 text-sm text-slate-900">
-                                    {lead.interest}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-slate-600">
-                                    {lead.source}
+                                    {lead.product_name}
                                 </td>
                                 <td className="px-6 py-4">
                                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${getStatusColor(lead.status)}`}>

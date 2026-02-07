@@ -28,6 +28,8 @@ export function LifeForm({ initialData, onSubmit, onCancel }: LifeFormProps) {
                 nominee: initialData.nominee,
                 status: initialData.status,
                 insurer: initialData.insurer,
+                customer_id: initialData.customer_id,
+                policy_id: initialData.policy_id,
             }
         }
         return {
@@ -45,6 +47,8 @@ export function LifeForm({ initialData, onSubmit, onCancel }: LifeFormProps) {
             nominee: '',
             status: 'Active',
             insurer: '',
+            customer_id: '',
+            policy_id: '',
         }
     })
 

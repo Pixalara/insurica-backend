@@ -136,7 +136,7 @@ export default function NewClientPage() {
         phone: phone || null,
         policy_number: policyNumber,
         category,
-        company_id: selectedCompanyId,
+        insurance_company: companies.find(c => c.id === selectedCompanyId)?.name || selectedCompanyId,
         product_name: productName || null,
         sum_insured: sumInsured,
         premium_amount: premiumAmount,
@@ -388,7 +388,7 @@ export default function NewClientPage() {
                   onChange={(e) => setStatus(e.target.value)}
                 >
                   <option value="Active">Active</option>
-                  <option value="Inactive">Inactive</option>
+                  <option value="Cancelled">Cancelled</option>
                   <option value="Expired">Expired</option>
                 </select>
               </div>

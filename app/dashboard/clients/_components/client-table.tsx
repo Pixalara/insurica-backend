@@ -23,9 +23,10 @@ export function ClientTable({ clients }: ClientTableProps) {
         try {
             await deleteClient(id)
             toast.success('Client deleted successfully', { id: toastId })
-        } catch (error: any) {
+        } catch (error) {
             console.error('Delete error:', error)
-            toast.error(error.message || 'Failed to delete client', { id: toastId })
+            const message = error instanceof Error ? error.message : 'Failed to delete client'
+            toast.error(message, { id: toastId })
         } finally {
             setDeletingId(null)
         }
@@ -61,8 +62,7 @@ export function ClientTable({ clients }: ClientTableProps) {
                                 if (Array.isArray(client.companies) && client.companies.length > 0) {
                                     displayInsurer = client.companies[0].name
                                 } else if (!Array.isArray(client.companies)) {
-                                     // @ts-ignore
-                                    displayInsurer = client.companies.name
+                                     displayInsurer = (client.companies as any).name
                                 }
                             }
 

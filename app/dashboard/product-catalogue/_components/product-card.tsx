@@ -1,14 +1,16 @@
 'use client'
 
-import { Download, Share2, FileText, IndianRupee } from 'lucide-react'
+import { Download, Share2, FileText, IndianRupee, Pencil, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import type { Product } from '../types'
 
 interface ProductCardProps {
     product: Product
+    onEdit: (product: Product) => void
+    onDelete: (id: string) => void
 }
 
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({ product, onEdit, onDelete }: ProductCardProps) {
     // Format currency in Indian style
     const formatCurrency = (val?: number) => {
         if (!val) return '-'
@@ -64,12 +66,22 @@ export function ProductCard({ product }: ProductCardProps) {
                     <span className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${getCategoryColor(product.category)}`}>
                         {product.category}
                     </span>
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide ${product.status === 'Active'
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-slate-100 text-slate-500'
-                        }`}>
-                        {product.status}
-                    </span>
+                    <div className="flex gap-1.5">
+                        <button
+                            onClick={() => onEdit(product)}
+                            className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            title="Edit Product"
+                        >
+                            <Pencil className="w-4 h-4" />
+                        </button>
+                        <button
+                            onClick={() => onDelete(product.id)}
+                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Delete Product"
+                        >
+                            <Trash2 className="w-4 h-4" />
+                        </button>
+                    </div>
                 </div>
 
                 <h3 className="font-bold text-slate-900 mb-1.5 group-hover:text-blue-600 transition-colors line-clamp-2">

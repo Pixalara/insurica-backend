@@ -1,434 +1,433 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { createClient, getCompanies } from '../../clients/actions'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Search, User, CheckCircle2 } from 'lucide-react'
+import { ArrowLeft, Lock, CheckCircle2 } from 'lucide-react'
 import { toast } from 'sonner'
-import { getClients, getCompanies, createClient } from '../../clients/actions'
+import { CustomerSearch } from '../../clients/_components/customer-search'
 
 const CATEGORIES = ['General', 'Health', 'Life'] as const
-const SUM_INSURED_OPTIONS = [
-    { label: '₹1 Lakh', value: 100000 },
-    { label: '₹2 Lakhs', value: 200000 },
-    { label: '₹3 Lakhs', value: 300000 },
-    { label: '₹5 Lakhs', value: 500000 },
-    { label: '₹10 Lakhs', value: 1000000 },
-    { label: '₹25 Lakhs', value: 2500000 },
-    { label: '₹50 Lakhs', value: 5000000 },
-    { label: '₹1 Crore', value: 10000000 },
-]
-
-type Customer = {
-    id: string
-    name: string
-    email: string
-    phone: string
-}
 
 type Company = {
-    id: string
-    name: string
-    type: 'General' | 'Health' | 'Life'
+  id: string
+  name: string
+  type: 'General' | 'Health' | 'Life'
 }
 
 export default function NewPolicyPage() {
-    // Customer Search
-    const [searchQuery, setSearchQuery] = useState('')
-    const [searchResults, setSearchResults] = useState<Customer[]>([])
-    const [searching, setSearching] = useState(false)
-    const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
+  // Customer Search State
+  const [customerFound, setCustomerFound] = useState(false)
+  const [foundCustomer, setFoundCustomer] = useState<{ id: string; name: string; phone: string; email: string | null } | null>(null)
+  const [showForm, setShowForm] = useState(false)
 
-    // Policy Fields
-    const [productName, setProductName] = useState('')
-    const [category, setCategory] = useState<typeof CATEGORIES[number] | ''>('')
-    const [companies, setCompanies] = useState<Company[]>([])
-    const [selectedCompanyId, setSelectedCompanyId] = useState('')
-    const [sumInsured, setSumInsured] = useState('')
-    const [startDate, setStartDate] = useState('')
-    const [endDate, setEndDate] = useState('')
-    const [premiumAmount, setPremiumAmount] = useState('')
-    const [policyNumber, setPolicyNumber] = useState('')
-    const [claimStatus, setClaimStatus] = useState('')
-    const [remarks, setRemarks] = useState('')
+  // Required Fields
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [phone, setPhone] = useState('')
+  const [policyNumber, setPolicyNumber] = useState('')
+  const [category, setCategory] = useState<typeof CATEGORIES[number] | ''>('')
 
-    const [loading, setLoading] = useState(false)
-    const [fetchingCompanies, setFetchingCompanies] = useState(false)
+  // Dependent on Category
+  const [companies, setCompanies] = useState<Company[]>([])
+  const [selectedCompanyId, setSelectedCompanyId] = useState('')
 
-    const router = useRouter()
+  // Other Fields
+  const [productName, setProductName] = useState('')
+  const [sumInsured, setSumInsured] = useState('')
+  const [premiumAmount, setPremiumAmount] = useState('')
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
+  const [notes, setNotes] = useState('')
+  const [status, setStatus] = useState('Active')
 
-    // Search customers
-    const searchCustomers = async () => {
-        if (!searchQuery.trim()) {
-            toast.error('Please enter a search query')
-            return
-        }
+  const [loading, setLoading] = useState(false)
+  const [fetchingCompanies, setFetchingCompanies] = useState(false)
 
-        setSearching(true)
-        try {
-            const result = await getClients({ query: searchQuery, limit: 10 })
-            // Unique customers by name and phone
-            const uniqueCustomers = result.clients.reduce((acc: Customer[], curr: any) => {
-                const exists = acc.find(c => c.phone === curr.phone || c.email === curr.email)
-                if (!exists && (curr.name || curr.phone)) {
-                    acc.push({
-                        id: curr.id,
-                        name: curr.name,
-                        email: curr.email,
-                        phone: curr.phone
-                    })
-                }
-                return acc
-            }, [])
-            setSearchResults(uniqueCustomers)
-            if (uniqueCustomers.length === 0) {
-                toast.info('No customers found. Create a new client first.')
-            }
-        } catch (error) {
-            toast.error('Failed to search customers')
-        } finally {
-            setSearching(false)
-        }
+  const router = useRouter()
+
+  // Handle customer found
+  const handleCustomerFound = (customer: { id: string; name: string; phone: string; email: string | null }) => {
+    setCustomerFound(true)
+    setFoundCustomer(customer)
+    setShowForm(true)
+
+    // Auto-fill customer data (read-only)
+    setName(customer.name || '')
+    setEmail(customer.email || '')
+    setPhone(customer.phone || '')
+  }
+
+  // Handle customer not found
+  const handleCustomerNotFound = () => {
+    setCustomerFound(false)
+    setFoundCustomer(null)
+    setShowForm(true)
+
+    // Clear form for new customer entry
+    setName('')
+    setEmail('')
+    setPhone('')
+  }
+
+  useEffect(() => {
+    async function fetchCompanies() {
+      if (!category) {
+        setCompanies([])
+        setSelectedCompanyId('')
+        return
+      }
+
+      setFetchingCompanies(true)
+      try {
+        const data = await getCompanies(category)
+        setCompanies(data as Company[])
+      } catch (err) {
+        console.error('Failed to fetch companies', err)
+        toast.error('Failed to load companies')
+      } finally {
+        setFetchingCompanies(false)
+      }
     }
 
-    // Fetch companies when category changes
-    useEffect(() => {
-        async function fetchCompanies() {
-            if (!category) {
-                setCompanies([])
-                setSelectedCompanyId('')
-                return
-            }
+    fetchCompanies()
+  }, [category])
 
-            setFetchingCompanies(true)
-            try {
-                const data = await getCompanies(category)
-                setCompanies(data as Company[])
-            } catch (err) {
-                toast.error('Failed to load insurance companies')
-            } finally {
-                setFetchingCompanies(false)
-            }
-        }
-        fetchCompanies()
-    }, [category])
+  // Derive duration during render
+  const calculateDuration = () => {
+    if (startDate && endDate) {
+      const start = new Date(startDate)
+      const end = new Date(endDate)
+      const diffTime = Math.abs(end.getTime() - start.getTime())
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault()
+      if (!isNaN(diffDays)) {
+        if (diffDays >= 365) {
+          const years = (diffDays / 365).toFixed(1)
+          return `${years} Year(s)`
+        } else {
+          return `${diffDays} Days`
+        }
+      }
+    }
+    return ''
+  }
 
-        if (!selectedCustomer) {
-            toast.error('Please select a customer first')
-            return
-        }
-        if (!category) {
-            toast.error('Please select a policy type')
-            return
-        }
-        if (!selectedCompanyId) {
-            toast.error('Please select an insurance company')
-            return
-        }
-        if (!policyNumber) {
-            toast.error('Please enter a policy number')
-            return
-        }
+  const policyDuration = calculateDuration()
 
-        setLoading(true)
-        const toastId = toast.loading('Creating policy...')
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
 
-        try {
-            await createClient({
-                name: selectedCustomer.name,
-                email: selectedCustomer.email,
-                phone: selectedCustomer.phone,
-                policy_number: policyNumber,
-                category,
-                company_id: selectedCompanyId,
-                product_name: productName,
-                sum_insured: sumInsured,
-                premium_amount: premiumAmount,
-                start_date: startDate,
-                end_date: endDate,
-                notes: remarks + (claimStatus ? ` | Claim Status: ${claimStatus}` : ''),
-                status: 'Active'
-            })
-
-            toast.success('Policy created successfully!', { id: toastId })
-            router.push('/dashboard/policies')
-        } catch (error: any) {
-            toast.error('Failed to create policy: ' + error.message, { id: toastId })
-        } finally {
-            setLoading(false)
-        }
+    // Validations
+    if (!category) {
+      toast.error('Please select a Policy Category first')
+      return
+    }
+    if (!selectedCompanyId) {
+      toast.error('Please select an Insurance Company')
+      return
     }
 
-    return (
-        <div className="max-w-4xl mx-auto pb-10">
-            <div className="mb-6">
-                <Link href="/dashboard/policies" className="text-slate-500 hover:text-slate-800 gap-2 mb-2 inline-flex items-center">
-                    <ArrowLeft className="w-4 h-4" /> Back to Policies
-                </Link>
-                <h1 className="text-3xl font-bold text-slate-900">Add New Policy</h1>
-                <p className="text-slate-500 text-sm mt-1">Link a policy to an existing customer</p>
+    setLoading(true)
+    const toastId = toast.loading('Saving policy...')
+
+    try {
+      const formData = {
+        name,
+        email: email || null,
+        phone: phone || null,
+        policy_number: policyNumber,
+        category,
+        insurance_company: companies.find(c => c.id === selectedCompanyId)?.name || selectedCompanyId,
+        product_name: productName || null,
+        sum_insured: sumInsured,
+        premium_amount: premiumAmount,
+        start_date: startDate,
+        end_date: endDate,
+        policy_duration: policyDuration,
+        notes: notes,
+        status
+      }
+
+      await createClient(formData)
+
+      toast.success(customerFound ? 'New policy added to existing customer' : 'New customer and policy created', { id: toastId })
+      router.push('/dashboard/policies')
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      console.error('Save error', error)
+      toast.error('Failed to save: ' + errorMessage, { id: toastId })
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="max-w-4xl mx-auto pb-10">
+      <div className="mb-6">
+        <Link href="/dashboard/policies" className="text-slate-500 hover:text-slate-800 gap-2 mb-2 inline-flex items-center">
+          <ArrowLeft className="w-4 h-4" /> Back to Policies
+        </Link>
+        <h1 className="text-3xl font-bold text-slate-900">Add New Policy</h1>
+        <p className="text-slate-500 text-sm mt-1">Search for existing customer or create new one - Zero re-entry guaranteed</p>
+      </div>
+
+      {/* Phase 1: Customer Search */}
+      <div className="mb-6">
+        <CustomerSearch
+          onCustomerFound={handleCustomerFound}
+          onCustomerNotFound={handleCustomerNotFound}
+        />
+      </div>
+
+      {/* Customer Found Alert */}
+      {customerFound && foundCustomer && (
+        <div className="mb-6 bg-green-50 border-2 border-green-200 rounded-xl p-5">
+          <div className="flex items-center gap-3 mb-3">
+            <CheckCircle2 className="w-6 h-6 text-green-600" />
+            <div>
+              <h3 className="font-bold text-green-900">Customer Found!</h3>
+              <p className="text-sm text-green-700">Information has been auto-filled and locked. You can now add a new policy for this customer.</p>
             </div>
-
-            {/* Step 1: Customer Selection */}
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-6">
-                <h3 className="text-lg font-semibold text-slate-800 mb-4 pb-2 border-b border-slate-100">
-                    Step 1: Select Customer
-                </h3>
-
-                {selectedCustomer ? (
-                    <div className="bg-green-50 border-2 border-green-200 rounded-xl p-5">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <CheckCircle2 className="w-6 h-6 text-green-600" />
-                                <div>
-                                    <h4 className="font-bold text-green-900">{selectedCustomer.name}</h4>
-                                    <p className="text-sm text-green-700">
-                                        {selectedCustomer.phone} • {selectedCustomer.email || 'No email'}
-                                    </p>
-                                </div>
-                            </div>
-                            <button
-                                onClick={() => setSelectedCustomer(null)}
-                                className="text-sm text-green-700 hover:text-green-900 underline"
-                            >
-                                Change
-                            </button>
-                        </div>
-                    </div>
-                ) : (
-                    <>
-                        <div className="flex gap-3 mb-4">
-                            <input
-                                type="text"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                onKeyPress={(e) => e.key === 'Enter' && searchCustomers()}
-                                placeholder="Search by name, phone or email..."
-                                className="flex-1 px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                            <button
-                                onClick={searchCustomers}
-                                disabled={searching}
-                                className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
-                            >
-                                <Search className="w-4 h-4" />
-                                {searching ? 'Searching...' : 'Search'}
-                            </button>
-                        </div>
-
-                        {searchResults.length > 0 && (
-                            <div className="border border-slate-200 rounded-lg overflow-hidden">
-                                {searchResults.map((customer) => (
-                                    <button
-                                        key={customer.id}
-                                        onClick={() => {
-                                            setSelectedCustomer(customer)
-                                            setSearchResults([])
-                                        }}
-                                        className="w-full px-4 py-3 flex items-center gap-3 hover:bg-slate-50 border-b border-slate-100 last:border-b-0 text-left"
-                                    >
-                                        <User className="w-5 h-5 text-slate-400" />
-                                        <div>
-                                            <p className="font-medium text-slate-900">{customer.name}</p>
-                                            <p className="text-sm text-slate-500">{customer.phone} • {customer.email || 'No email'}</p>
-                                        </div>
-                                    </button>
-                                ))}
-                            </div>
-                        )}
-
-                        <p className="text-xs text-slate-500 mt-3">
-                            💡 Can't find the customer? <Link href="/dashboard/clients/new" className="text-blue-600 hover:underline">Create new client first</Link>
-                        </p>
-                    </>
-                )}
+          </div>
+          <div className="bg-white rounded-lg p-4 mt-3">
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div><span className="font-semibold">Name:</span> {foundCustomer.name}</div>
+              <div><span className="font-semibold">Phone:</span> {foundCustomer.phone}</div>
+              <div><span className="font-semibold">Email:</span> {foundCustomer.email || 'N/A'}</div>
+              <div><span className="font-semibold">Customer ID:</span> {foundCustomer.id.slice(0, 8)}...</div>
             </div>
-
-            {/* Step 2: Policy Form */}
-            {selectedCustomer && (
-                <form onSubmit={handleSubmit} className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                    <h3 className="text-lg font-semibold text-slate-800 mb-4 pb-2 border-b border-slate-100">
-                        Step 2: Policy Details
-                    </h3>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                        {/* Policy Number */}
-                        <div>
-                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">
-                                Policy Number <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                required
-                                value={policyNumber}
-                                onChange={(e) => setPolicyNumber(e.target.value)}
-                                placeholder="e.g., POL-123456"
-                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                        </div>
-
-                        {/* Product Name */}
-                        <div>
-                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">
-                                Product Name
-                            </label>
-                            <input
-                                value={productName}
-                                onChange={(e) => setProductName(e.target.value)}
-                                placeholder="e.g., Comprehensive Motor Insurance"
-                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                        </div>
-
-                        {/* Policy Type */}
-                        <div>
-                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">
-                                Policy Type <span className="text-red-500">*</span>
-                            </label>
-                            <select
-                                required
-                                value={category}
-                                onChange={(e) => setCategory(e.target.value as any)}
-                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            >
-                                <option value="">Select Type</option>
-                                {CATEGORIES.map(cat => (
-                                    <option key={cat} value={cat}>{cat}</option>
-                                ))}
-                            </select>
-                        </div>
-
-                        {/* Insurance Company */}
-                        <div>
-                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">
-                                Insurance Company <span className="text-red-500">*</span>
-                            </label>
-                            <select
-                                required
-                                disabled={!category || fetchingCompanies}
-                                value={selectedCompanyId}
-                                onChange={(e) => setSelectedCompanyId(e.target.value)}
-                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-100"
-                            >
-                                <option value="">
-                                    {fetchingCompanies ? 'Loading...' : (category ? 'Select Company' : 'Select Policy Type First')}
-                                </option>
-                                {companies.map(comp => (
-                                    <option key={comp.id} value={comp.id}>{comp.name}</option>
-                                ))}
-                            </select>
-                        </div>
-
-                        {/* Sum Insured */}
-                        <div>
-                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">
-                                Sum Insured
-                            </label>
-                            <select
-                                value={sumInsured}
-                                onChange={(e) => setSumInsured(e.target.value)}
-                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            >
-                                <option value="">Select Amount</option>
-                                {SUM_INSURED_OPTIONS.map(opt => (
-                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                ))}
-                            </select>
-                        </div>
-
-                        {/* Premium */}
-                        <div>
-                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">
-                                Premium Amount
-                            </label>
-                            <input
-                                type="number"
-                                value={premiumAmount}
-                                onChange={(e) => setPremiumAmount(e.target.value)}
-                                placeholder="e.g., 15000"
-                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                        </div>
-
-                        {/* Start Date */}
-                        <div>
-                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">
-                                Start Date
-                            </label>
-                            <input
-                                type="date"
-                                value={startDate}
-                                onChange={(e) => setStartDate(e.target.value)}
-                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                        </div>
-
-                        {/* End Date */}
-                        <div>
-                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">
-                                End Date
-                            </label>
-                            <input
-                                type="date"
-                                value={endDate}
-                                onChange={(e) => setEndDate(e.target.value)}
-                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                        </div>
-
-                        {/* Claim Status */}
-                        <div>
-                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">
-                                Claim Status (Optional)
-                            </label>
-                            <select
-                                value={claimStatus}
-                                onChange={(e) => setClaimStatus(e.target.value)}
-                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            >
-                                <option value="">No Claim</option>
-                                <option value="Pending">Claim Pending</option>
-                                <option value="Approved">Claim Approved</option>
-                                <option value="Rejected">Claim Rejected</option>
-                            </select>
-                        </div>
-
-                        {/* Remarks */}
-                        <div className="md:col-span-2">
-                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">
-                                Remarks (Optional)
-                            </label>
-                            <textarea
-                                value={remarks}
-                                onChange={(e) => setRemarks(e.target.value)}
-                                placeholder="Any additional notes..."
-                                rows={3}
-                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                        </div>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="pt-6 flex gap-3 border-t border-slate-100 mt-6">
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm"
-                        >
-                            {loading ? 'Creating...' : 'Create Policy'}
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => router.back()}
-                            className="px-6 py-3 border border-slate-300 rounded-lg font-medium text-slate-700 hover:bg-slate-50 transition-colors"
-                        >
-                            Cancel
-                        </button>
-                    </div>
-                </form>
-            )}
+          </div>
         </div>
-    )
+      )}
+
+      {/* New Customer Alert */}
+      {showForm && !customerFound && (
+        <div className="mb-6 bg-blue-50 border-2 border-blue-200 rounded-xl p-5">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold">!</div>
+            <div>
+              <h3 className="font-bold text-blue-900">New Customer</h3>
+              <p className="text-sm text-blue-700">No existing customer found. Please fill in all customer details below.</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Phase 2: Form (shown after search) */}
+      {showForm && (
+        <form onSubmit={handleSubmit} className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-6">
+
+          {/* Customer Information Section */}
+          <div>
+            <h3 className="text-lg font-semibold text-slate-800 mb-4 pb-2 border-b border-slate-100">
+              Customer Details
+              {customerFound && <Lock className="inline-block w-4 h-4 ml-2 text-amber-600" />}
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="md:col-span-2">
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">
+                  Customer Name <span className="text-red-500">*</span>
+                  {customerFound && <span className="ml-2 text-amber-600">(Locked)</span>}
+                </label>
+                <input
+                  required
+                  readOnly={customerFound}
+                  className={`w-full border rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium ${customerFound ? 'bg-amber-50 border-amber-300 cursor-not-allowed' : 'bg-slate-50 border-slate-200'
+                    }`}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="e.g. John Doe"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">
+                  Phone Number {customerFound && <span className="ml-2 text-amber-600">(Locked)</span>}
+                </label>
+                <input
+                  readOnly={customerFound}
+                  className={`w-full border rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium ${customerFound ? 'bg-amber-50 border-amber-300 cursor-not-allowed' : 'bg-slate-50 border-slate-200'
+                    }`}
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="e.g. +91 98765 43210"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">
+                  Email Address {customerFound && <span className="ml-2 text-amber-600">(Locked)</span>}
+                </label>
+                <input
+                  type="email"
+                  readOnly={customerFound}
+                  className={`w-full border rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium ${customerFound ? 'bg-amber-50 border-amber-300 cursor-not-allowed' : 'bg-slate-50 border-slate-200'
+                    }`}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="e.g. john@example.com"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Policy Details Section */}
+          <div>
+            <h3 className="text-lg font-semibold text-slate-800 mb-4 pb-2 border-b border-slate-100">Policy Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Category <span className="text-red-500">*</span></label>
+                <select
+                  required
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium appearance-none"
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value as any)}
+                >
+                  <option value="">Select Category</option>
+                  {CATEGORIES.map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Insurer Name <span className="text-red-500">*</span></label>
+                <select
+                  required
+                  disabled={!category || fetchingCompanies}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium appearance-none disabled:bg-slate-100 disabled:text-slate-400"
+                  value={selectedCompanyId}
+                  onChange={(e) => setSelectedCompanyId(e.target.value)}
+                >
+                  <option value="">
+                    {fetchingCompanies ? 'Loading...' : (category ? 'Select Company' : 'Select Category First')}
+                  </option>
+                  {companies.map(comp => (
+                    <option key={comp.id} value={comp.id}>{comp.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Policy Number <span className="text-red-500">*</span></label>
+                <input
+                  required
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
+                  value={policyNumber}
+                  onChange={(e) => setPolicyNumber(e.target.value)}
+                  placeholder="e.g. POL-123456789"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Product Opted</label>
+                <input
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
+                  value={productName}
+                  onChange={(e) => setProductName(e.target.value)}
+                  placeholder="e.g. Jeevan Anand"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Sum Insured</label>
+                <input
+                  type="number"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
+                  value={sumInsured}
+                  onChange={(e) => setSumInsured(e.target.value)}
+                  placeholder="e.g. 500000"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Premium Collected (incl. taxes)</label>
+                <input
+                  type="number"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
+                  value={premiumAmount}
+                  onChange={(e) => setPremiumAmount(e.target.value)}
+                  placeholder="e.g. 15000"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Policy Start Date</label>
+                <input
+                  type="date"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Policy End Date</label>
+                <input
+                  type="date"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Policy Duration</label>
+                <input
+                  readOnly
+                  disabled
+                  className="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-500 font-medium cursor-not-allowed"
+                  value={policyDuration}
+                  placeholder="Auto-calculated"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Policy Status</label>
+                <select
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium appearance-none"
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                >
+                  <option value="Active">Active</option>
+                  <option value="Cancelled">Cancelled</option>
+                  <option value="Expired">Expired</option>
+                </select>
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Notes</label>
+                <textarea
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Add any additional notes here..."
+                  rows={3}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-4 flex gap-3 border-t border-slate-100 mt-2">
+            <button
+              type="submit"
+              disabled={loading}
+              className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm"
+            >
+              {loading ? 'Saving...' : (customerFound ? 'Add Policy to Customer' : 'Create Customer & Policy')}
+            </button>
+            <button
+              type="button"
+              onClick={() => router.back()}
+              className="px-6 py-3 border border-slate-300 rounded-lg font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
+    </div>
+  )
 }

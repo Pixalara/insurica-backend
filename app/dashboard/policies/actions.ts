@@ -15,18 +15,21 @@ export async function getPolicies(filters?: {
   const itemsPerPage = 50
 
   let query = supabase
-    .from('clients')
-    .select('*', { count: 'exact' })
+    .from('policies')
+    .select(`
+      *,
+      customer:customers(customer_id, full_name, mobile_number, email)
+    `, { count: 'exact' })
     .order('created_at', { ascending: false })
     .range((page - 1) * itemsPerPage, page * itemsPerPage - 1)
 
   // Apply filters
   if (filters?.query) {
-    query = query.or(`name.ilike.%${filters.query}%,policy_number.ilike.%${filters.query}%,email.ilike.%${filters.query}%`)
+    query = query.or(`policy_number.ilike.%${filters.query}%,product.ilike.%${filters.query}%,insurance_company.ilike.%${filters.query}%`)
   }
 
   if (filters?.category && filters.category !== 'All') {
-    query = query.ilike('category', `%${filters.category}%`)
+    query = query.eq('policy_type', filters.category)
   }
 
   if (filters?.status && filters.status !== 'All') {
@@ -50,9 +53,12 @@ export async function getPolicyById(id: string) {
   const supabase = await createClient()
 
   const { data, error } = await supabase
-    .from('clients')
-    .select('*')
-    .eq('id', id)
+    .from('policies')
+    .select(`
+      *,
+      customer:customers(customer_id, full_name, mobile_number, email, address, dob)
+    `)
+    .eq('policy_id', id)
     .single()
 
   if (error) {
@@ -67,8 +73,20 @@ export async function createPolicy(formData: PolicyFormData) {
   const supabase = await createClient()
 
   const { data, error } = await supabase
-    .from('clients')
-    .insert([formData])
+    .from('policies')
+    .insert([{
+      customer_id: formData.customer_id,
+      policy_number: formData.policy_number || null,
+      product: formData.product || null,
+      insurance_company: formData.insurance_company,
+      policy_type: formData.policy_type,
+      sum_insured: formData.sum_insured || null,
+      start_date: formData.start_date || null,
+      end_date: formData.end_date || null,
+      premium: formData.premium || null,
+      remarks: formData.remarks || null,
+      status: formData.status || 'Active'
+    }])
     .select()
     .single()
 
@@ -78,6 +96,7 @@ export async function createPolicy(formData: PolicyFormData) {
   }
 
   revalidatePath('/dashboard/policies')
+  revalidatePath('/dashboard/clients')
   return { success: true, data }
 }
 
@@ -85,12 +104,21 @@ export async function updatePolicy(id: string, formData: PolicyFormData) {
   const supabase = await createClient()
 
   const { data, error } = await supabase
-    .from('clients')
+    .from('policies')
     .update({
-      ...formData,
+      policy_number: formData.policy_number || null,
+      product: formData.product || null,
+      insurance_company: formData.insurance_company,
+      policy_type: formData.policy_type,
+      sum_insured: formData.sum_insured || null,
+      start_date: formData.start_date || null,
+      end_date: formData.end_date || null,
+      premium: formData.premium || null,
+      remarks: formData.remarks || null,
+      status: formData.status,
       updated_at: new Date().toISOString(),
     })
-    .eq('id', id)
+    .eq('policy_id', id)
     .select()
     .single()
 
@@ -100,6 +128,7 @@ export async function updatePolicy(id: string, formData: PolicyFormData) {
   }
 
   revalidatePath('/dashboard/policies')
+  revalidatePath('/dashboard/clients')
   return { success: true, data }
 }
 
@@ -107,9 +136,9 @@ export async function deletePolicy(id: string) {
   const supabase = await createClient()
 
   const { error } = await supabase
-    .from('clients')
+    .from('policies')
     .delete()
-    .eq('id', id)
+    .eq('policy_id', id)
 
   if (error) {
     console.error('Error deleting policy:', error)
@@ -117,6 +146,7 @@ export async function deletePolicy(id: string) {
   }
 
   revalidatePath('/dashboard/policies')
+  revalidatePath('/dashboard/clients')
   return { success: true }
 }
 
@@ -124,8 +154,8 @@ export async function getPolicyStats() {
   const supabase = await createClient()
 
   const { data: policies, error } = await supabase
-    .from('clients')
-    .select('*')
+    .from('policies')
+    .select('status')
 
   if (error) {
     console.error('Error fetching policy stats:', error)

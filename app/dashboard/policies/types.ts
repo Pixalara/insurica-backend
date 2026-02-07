@@ -1,32 +1,40 @@
+// Policy type matching the policies table with customer join
 export interface Policy {
-  id: string
-  policy_number: string
-  name: string
-  email: string
-  phone: string
-  category: string
-  insurer?: string
-  premium_amount: number
-  start_date: string
-  end_date: string
+  policy_id: string
+  customer_id: string
+  policy_number: string | null
+  product: string | null
+  insurance_company: string
+  policy_type: 'General' | 'Health' | 'Life'
+  sum_insured: number | null
+  start_date: string | null
+  end_date: string | null
+  premium: number | null
+  claim_status: 'open' | 'closed' | null
+  claim_settled_amount: number | null
+  remarks: string | null
   status: 'Active' | 'Expired' | 'Cancelled'
-  sum_insured?: number
-  vehicle_number?: string
   created_at: string
-  updated_at?: string
+  updated_at: string
+  // Joined customer data
+  customer?: {
+    customer_id: string
+    full_name: string
+    mobile_number: string
+    email: string | null
+  }
 }
 
 export interface PolicyFormData {
-  policy_number: string
-  name: string
-  email: string
-  phone: string
-  category: string
-  insurer?: string
-  premium_amount: number
-  start_date: string
-  end_date: string
-  status: 'Active' | 'Expired' | 'Cancelled'
+  customer_id: string
+  policy_number?: string
+  product?: string
+  insurance_company: string
+  policy_type: 'General' | 'Health' | 'Life'
   sum_insured?: number
-  vehicle_number?: string
+  start_date?: string
+  end_date?: string
+  premium?: number
+  remarks?: string
+  status: 'Active' | 'Expired' | 'Cancelled'
 }

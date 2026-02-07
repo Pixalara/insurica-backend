@@ -1,5 +1,7 @@
 export interface HealthPolicy {
-  id: string
+  id: string  // Alias for policy_id for backward compatibility
+  policy_id: string
+  customer_id: string
   policyNumber: string
   holderName: string
   contactNumber: string
@@ -14,4 +16,3 @@ export interface HealthPolicy {
   status: string
   insurer: string
 }
-

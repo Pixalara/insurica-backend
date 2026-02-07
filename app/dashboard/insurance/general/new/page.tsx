@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
@@ -9,7 +9,6 @@ import { GENERAL_INSURERS, GENERAL_PRODUCTS } from '../constants'
 
 export default function NewGeneralPolicyPage() {
     const router = useRouter()
-    const supabase = createClient()
 
     const [loading, setLoading] = useState(false)
     const [formData, setFormData] = useState({
@@ -27,10 +26,8 @@ export default function NewGeneralPolicyPage() {
         notes: ''
     })
 
-    const [duration, setDuration] = useState('')
-
-    // Auto-calculate duration
-    useEffect(() => {
+    // Calculate duration during render
+    const calculateDuration = () => {
         if (formData.startDate && formData.endDate) {
             const start = new Date(formData.startDate)
             const end = new Date(formData.endDate)
@@ -40,13 +37,16 @@ export default function NewGeneralPolicyPage() {
             if (!isNaN(diffDays)) {
                 if (diffDays >= 365) {
                     const years = (diffDays / 365).toFixed(1)
-                    setDuration(`${years} Year(s)`)
+                    return `${years} Year(s)`
                 } else {
-                    setDuration(`${diffDays} Days`)
+                    return `${diffDays} Days`
                 }
             }
         }
-    }, [formData.startDate, formData.endDate])
+        return ''
+    }
+
+    const duration = calculateDuration()
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value })
@@ -231,7 +231,7 @@ export default function NewGeneralPolicyPage() {
                                 onChange={handleChange}
                             >
                                 <option value="Active">Active</option>
-                                <option value="Inactive">Inactive</option>
+                                <option value="Cancelled">Cancelled</option>
                                 <option value="Expired">Expired</option>
                             </select>
                         </div>

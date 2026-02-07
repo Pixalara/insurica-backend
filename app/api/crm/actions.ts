@@ -343,14 +343,15 @@ export async function uploadProductCatalogue(formData: {
     }
 
     const { data, error } = await supabase
-        .from('products_catalogue')
+        .from('products')
         .insert({
-            product_name: formData.product_name,
-            product_type: formData.product_type,
-            insurance_company: formData.insurance_company,
+            name: formData.product_name,
+            category: formData.product_type,
+            insurer: formData.insurance_company,
             pdf_url: formData.pdf_url || null,
             pdf_filename: formData.pdf_filename || null,
-            uploaded_by_agent_id: user.id
+            agent_id: user.id,
+            status: 'Active'
         })
         .select()
         .single()
@@ -361,7 +362,19 @@ export async function uploadProductCatalogue(formData: {
     }
 
     revalidatePath('/dashboard/product-catalogue')
-    return { success: true, product: data as ProductCatalogue }
+    return { 
+        success: true, 
+        product: {
+            product_id: data.id,
+            product_name: data.name,
+            product_type: data.category,
+            insurance_company: data.insurer,
+            pdf_url: data.pdf_url,
+            pdf_filename: data.pdf_filename,
+            uploaded_by_agent_id: data.agent_id,
+            created_at: data.created_at
+        } as ProductCatalogue 
+    }
 }
 
 /**
@@ -375,20 +388,20 @@ export async function getProductsCatalogue(filters?: {
     const supabase = await createSupabaseClient()
 
     let query = supabase
-        .from('products_catalogue')
+        .from('products')
         .select('*', { count: 'exact' })
         .order('created_at', { ascending: false })
 
     if (filters?.product_type && filters.product_type !== 'All') {
-        query = query.eq('product_type', filters.product_type)
+        query = query.eq('category', filters.product_type)
     }
 
     if (filters?.insurance_company && filters.insurance_company !== 'All') {
-        query = query.eq('insurance_company', filters.insurance_company)
+        query = query.eq('insurer', filters.insurance_company)
     }
 
     if (filters?.query) {
-        query = query.or(`product_name.ilike.%${filters.query}%,insurance_company.ilike.%${filters.query}%`)
+        query = query.or(`name.ilike.%${filters.query}%,insurer.ilike.%${filters.query}%`)
     }
 
     const { data, error, count } = await query
@@ -398,8 +411,19 @@ export async function getProductsCatalogue(filters?: {
         return { products: [], totalCount: 0 }
     }
 
+    const mappedProducts = (data || []).map(p => ({
+        product_id: p.id,
+        product_name: p.name,
+        product_type: p.category,
+        insurance_company: p.insurer,
+        pdf_url: p.pdf_url,
+        pdf_filename: p.pdf_filename,
+        uploaded_by_agent_id: p.agent_id,
+        created_at: p.created_at
+    }))
+
     return {
-        products: data as ProductCatalogue[],
+        products: mappedProducts as ProductCatalogue[],
         totalCount: count || 0
     }
 }

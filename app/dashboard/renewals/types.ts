@@ -1,16 +1,21 @@
 export interface Renewal {
-  id: string
-  policy_number: string
-  name: string
-  email: string
-  phone: string
-  category: string
-  insurer?: string
-  premium_amount: number
-  start_date: string
-  end_date: string
+  policy_id: string
+  customer_id: string
+  policy_number: string | null
+  product: string | null
+  insurance_company: string
+  policy_type: 'General' | 'Health' | 'Life'
+  premium: number | null
+  start_date: string | null
+  end_date: string | null
   status: string
   days_to_expiry: number
+  // Joined customer data
+  customer?: {
+    full_name: string
+    mobile_number: string
+    email: string | null
+  }
 }
 
 export type RenewalFilter = '30' | '60' | '90' | 'overdue'

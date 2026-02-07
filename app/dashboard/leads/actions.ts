@@ -114,8 +114,9 @@ export async function deleteLead(id: string) {
 
   if (error) {
     console.error('Error deleting lead:', error)
-    throw new Error('Failed to delete lead')
+    return { success: false, error: 'Failed to delete lead' }
   }
 
   revalidatePath('/dashboard/leads')
+  return { success: true }
 }
