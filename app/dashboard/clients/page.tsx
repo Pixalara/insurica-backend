@@ -3,6 +3,7 @@ import { ClientStats } from './_components/client-stats'
 import { ClientTable } from './_components/client-table'
 import { ClientFilters } from './_components/client-filters'
 import { getClients, getClientMetrics } from './actions'
+import { Client } from './types'
 
 export default async function ClientsPage({
   searchParams,
@@ -45,7 +46,7 @@ export default async function ClientsPage({
 
       <ClientFilters />
 
-      <ClientTable clients={clients as any} /> 
+      <ClientTable clients={clients as Client[]} /> 
       
       <div className="text-center text-xs text-slate-400 mt-4">
         Showing {clients.length} of {totalCount} clients

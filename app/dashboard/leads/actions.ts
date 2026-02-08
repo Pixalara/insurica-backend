@@ -104,7 +104,7 @@ export async function updateLead(id: string, data: Partial<Omit<Lead, 'id' | 'cr
   revalidatePath('/dashboard/leads')
 }
 
-export async function deleteLead(id: string) {
+export async function deleteLead(id: string): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient()
   
   const { error } = await supabase
@@ -114,8 +114,9 @@ export async function deleteLead(id: string) {
 
   if (error) {
     console.error('Error deleting lead:', error)
-    throw new Error('Failed to delete lead')
+    return { success: false, error: 'Failed to delete lead' }
   }
 
   revalidatePath('/dashboard/leads')
+  return { success: true }
 }

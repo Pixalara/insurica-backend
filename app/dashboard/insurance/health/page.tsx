@@ -4,8 +4,8 @@ import { useState, useEffect, Suspense } from 'react'
 import { Search } from 'lucide-react'
 import { HealthTable } from './_components/health-table'
 import { HealthPolicy } from './types'
-import { getClients, deleteClient } from '../../clients/actions'
 import { Client } from '../../clients/types'
+import { getClients, deleteClient } from '../../clients/actions'
 import { toast } from 'sonner'
 import { useSearchParams } from 'next/navigation'
 
@@ -34,21 +34,21 @@ function HealthInsuranceContent() {
             const { clients } = await getClients({ product: 'Health' })
             
             const healthPolicies: HealthPolicy[] = clients.map((c: Client) => {
-                let insurerName = 'Unknown Insurer'
-                const companiesData = c.companies as any
-
-                if (companiesData) {
-                    if (Array.isArray(companiesData) && companiesData.length > 0) {
-                        insurerName = companiesData[0]?.name || 'Unknown Insurer'
-                    } else if (typeof companiesData === 'object' && companiesData.name) {
-                        insurerName = companiesData.name
-                    }
+                // Get insurer name from the backward compat mapping
+                let insurerName = c.insurance_company || 'Unknown Insurer'
+                const companiesData = c.companies
+                if (Array.isArray(companiesData) && companiesData.length > 0) {
+                    insurerName = (companiesData[0] as { name: string }).name || insurerName
+                } else if (typeof companiesData === 'object' && companiesData && 'name' in companiesData) {
+                    insurerName = (companiesData as unknown as { name: string }).name
                 }
 
                 return {
-                    id: c.id,
-                    policyNumber: c.policy_number,
-                    holderName: c.name,
+                    id: c.id || c.policy_id,
+                    policy_id: c.policy_id,
+                    customer_id: c.customer_id,
+                    policyNumber: c.policy_number || '',
+                    holderName: c.name || 'Unknown',
                     contactNumber: c.phone || '',
                     email: c.email || '',
                     planType: c.product_name || 'Individual', 
@@ -58,7 +58,7 @@ function HealthInsuranceContent() {
                     endDate: c.end_date || new Date().toISOString(),
                     renewalDate: c.end_date || new Date().toISOString(),
                     membersCovered: 1, // Default as not in schema
-                    status: (c.status as any) || 'Active',
+                    status: (c.status as 'Active' | 'Expired' | 'Cancelled') || 'Active',
                     insurer: insurerName
                 }
             })

@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS public.products (
     premium_range_max NUMERIC,
     features TEXT[],
     description TEXT,
-    status TEXT NOT NULL DEFAULT 'Active' CHECK (status IN ('Active', 'Inactive')),
+    status TEXT NOT NULL DEFAULT 'Active' CHECK (status IN ('Active', 'Cancelled')),
     pdf_url TEXT,
     pdf_filename TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW(),

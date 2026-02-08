@@ -64,7 +64,7 @@ export function ClientFilters() {
                 >
                     <option value="All">All Status</option>
                     <option value="Active">Active</option>
-                    <option value="Inactive">Inactive</option>
+                    <option value="Cancelled">Cancelled</option>
                     <option value="Expired">Expired</option>
                 </select>
 

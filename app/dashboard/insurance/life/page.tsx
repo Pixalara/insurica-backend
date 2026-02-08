@@ -4,8 +4,8 @@ import { useState, useEffect, Suspense } from 'react'
 import { Search } from 'lucide-react'
 import { LifeTable } from './_components/life-table'
 import { LifePolicy } from './types'
-import { getClients, deleteClient } from '../../clients/actions'
 import { Client } from '../../clients/types'
+import { getClients, deleteClient } from '../../clients/actions'
 import { toast } from 'sonner'
 import { useSearchParams } from 'next/navigation'
 
@@ -34,22 +34,21 @@ function LifeInsuranceContent() {
       const { clients } = await getClients({ product: 'Life Insurance' })
       
       const lifePolicies: LifePolicy[] = clients.map((c: Client) => {
-
-        let insurerName = 'Unknown Insurer'
+        // Get insurer name from the backward compat mapping
+        let insurerName = c.insurance_company || 'Unknown Insurer'
         const companiesData = c.companies
-
-        if (companiesData) {
-            if (Array.isArray(companiesData) && companiesData.length > 0) {
-                insurerName = companiesData[0]?.name || 'Unknown Insurer'
-            } else if (!Array.isArray(companiesData) && typeof companiesData === 'object' && companiesData.name) {
-                insurerName = companiesData.name
-            }
+        if (Array.isArray(companiesData) && companiesData.length > 0) {
+            insurerName = (companiesData[0] as { name: string }).name || insurerName
+        } else if (typeof companiesData === 'object' && companiesData && 'name' in companiesData) {
+            insurerName = (companiesData as unknown as { name: string }).name
         }
 
         return {
-          id: c.id,
-          policyNumber: c.policy_number,
-          holderName: c.name,
+          id: c.id || c.policy_id,
+          policy_id: c.policy_id,
+          customer_id: c.customer_id,
+          policyNumber: c.policy_number || '',
+          holderName: c.name || 'Unknown',
           contactNumber: c.phone || '',
           email: c.email || '',
           planType: c.product_name || 'Term Life',
@@ -60,7 +59,7 @@ function LifeInsuranceContent() {
           maturityDate: c.end_date || new Date(new Date().setFullYear(new Date().getFullYear() + 20)).toISOString(),
           nextDueDate: c.end_date || new Date().toISOString(), // Using end_date as proxy for now
           nominee: 'Not Specified', // Not in DB
-          status: c.status || 'Active',
+          status: (c.status as 'Active' | 'Expired' | 'Cancelled') || 'Active',
           insurer: insurerName
         }
       })

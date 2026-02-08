@@ -1,27 +1,55 @@
 'use client'
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Upload, FileText, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
-import { createProduct } from '../actions'
+import { createProduct, updateProduct } from '../actions'
 import { useRouter } from 'next/navigation'
+import type { Product } from '../types'
 
-interface UploadProductModalProps {
+interface ProductModalProps {
     isOpen: boolean
     onClose: () => void
+    product?: Product | null
 }
 
-export function UploadProductModal({ isOpen, onClose }: UploadProductModalProps) {
-    const [productName, setProductName] = useState('')
-    const [productType, setProductType] = useState<'General' | 'Health' | 'Life' | ''>('')
-    const [insurer, setInsurer] = useState('')
-    const [coverageAmount, setCoverageAmount] = useState('')
-    const [premiumMin, setPremiumMin] = useState('')
-    const [premiumMax, setPremiumMax] = useState('')
-    const [description, setDescription] = useState('')
+export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
+    const isEdit = !!product
+
+    const [productName, setProductName] = useState(product?.name || '')
+    const [productType, setProductType] = useState<'General' | 'Health' | 'Life' | ''>(product?.category || '')
+    const [insurer, setInsurer] = useState(product?.insurer || '')
+    const [coverageAmount, setCoverageAmount] = useState(product?.coverage_amount?.toString() || '')
+    const [premiumMin, setPremiumMin] = useState(product?.premium_range_min?.toString() || '')
+    const [premiumMax, setPremiumMax] = useState(product?.premium_range_max?.toString() || '')
+    const [description, setDescription] = useState(product?.description || '')
     const [pdfFile, setPdfFile] = useState<File | null>(null)
     const [uploading, setUploading] = useState(false)
     const [errors, setErrors] = useState<string[]>([])
+
+    // Update form when product prop changes or modal opens/closes
+    useEffect(() => {
+        if (product) {
+            setProductName(product.name)
+            setProductType(product.category)
+            setInsurer(product.insurer)
+            setCoverageAmount(product.coverage_amount?.toString() || '')
+            setPremiumMin(product.premium_range_min?.toString() || '')
+            setPremiumMax(product.premium_range_max?.toString() || '')
+            setDescription(product.description || '')
+        } else {
+            // Reset for new product
+            setProductName('')
+            setProductType('')
+            setInsurer('')
+            setCoverageAmount('')
+            setPremiumMin('')
+            setPremiumMax('')
+            setDescription('')
+        }
+        setPdfFile(null)
+        setErrors([])
+    }, [product, isOpen])
 
     const router = useRouter()
 
@@ -67,7 +95,7 @@ export function UploadProductModal({ isOpen, onClose }: UploadProductModalProps)
         if (!productName.trim()) formErrors.push('Product name is required')
         if (!productType) formErrors.push('Product type is required')
         if (!insurer.trim()) formErrors.push('Insurance company is required')
-        if (!pdfFile) formErrors.push('PDF file is required')
+        if (!isEdit && !pdfFile) formErrors.push('PDF file is required')
 
         if (formErrors.length > 0) {
             setErrors(formErrors)
@@ -75,7 +103,7 @@ export function UploadProductModal({ isOpen, onClose }: UploadProductModalProps)
         }
 
         setUploading(true)
-        const toastId = toast.loading('Uploading product...')
+        const toastId = toast.loading(isEdit ? 'Updating product...' : 'Uploading product...')
 
         try {
             // In a real implementation, you would:
@@ -97,12 +125,16 @@ export function UploadProductModal({ isOpen, onClose }: UploadProductModalProps)
                 features: '',
                 status: 'Active' as const,
                 // TODO: Add pdf_url and pdf_filename after implementing file upload
-                pdf_filename: pdfFile?.name || ''
+                pdf_filename: pdfFile?.name || product?.pdf_filename || ''
             }
 
-            await createProduct(formData)
-
-            toast.success('Product uploaded successfully!', { id: toastId })
+            if (isEdit && product) {
+                await updateProduct(product.id, formData)
+                toast.success('Product updated successfully!', { id: toastId })
+            } else {
+                await createProduct(formData)
+                toast.success('Product uploaded successfully!', { id: toastId })
+            }
 
             // Reset form
             setProductName('')
@@ -117,8 +149,9 @@ export function UploadProductModal({ isOpen, onClose }: UploadProductModalProps)
 
             onClose()
             router.refresh()
-        } catch (error: any) {
-            toast.error('Failed to upload product: ' + error.message, { id: toastId })
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Unknown error'
+            toast.error('Failed to upload product: ' + message, { id: toastId })
         } finally {
             setUploading(false)
         }
@@ -132,8 +165,8 @@ export function UploadProductModal({ isOpen, onClose }: UploadProductModalProps)
                 {/* Header */}
                 <div className="sticky top-0 bg-white border-b border-slate-200 p-6 flex justify-between items-center">
                     <div>
-                        <h2 className="text-2xl font-bold text-slate-900">Upload Product</h2>
-                        <p className="text-sm text-slate-500 mt-1">Add a new insurance product with PDF brochure</p>
+                        <h2 className="text-2xl font-bold text-slate-900">{isEdit ? 'Edit Product' : 'Upload Product'}</h2>
+                        <p className="text-sm text-slate-500 mt-1">{isEdit ? 'Update product details and brochure' : 'Add a new insurance product with PDF brochure'}</p>
                     </div>
                     <button
                         onClick={onClose}
@@ -185,7 +218,7 @@ export function UploadProductModal({ isOpen, onClose }: UploadProductModalProps)
                             </label>
                             <select
                                 value={productType}
-                                onChange={(e) => setProductType(e.target.value as any)}
+                                onChange={(e) => setProductType(e.target.value as 'General' | 'Health' | 'Life' | '')}
                                 className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 required
                             >
@@ -270,7 +303,7 @@ export function UploadProductModal({ isOpen, onClose }: UploadProductModalProps)
                     {/* PDF Upload */}
                     <div>
                         <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">
-                            Upload PDF <span className="text-red-500">*</span>
+                            {isEdit ? 'Update PDF (Optional)' : 'Upload PDF'} {!isEdit && <span className="text-red-500">*</span>}
                         </label>
                         <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
                             <input
@@ -279,7 +312,7 @@ export function UploadProductModal({ isOpen, onClose }: UploadProductModalProps)
                                 onChange={handleFileChange}
                                 className="hidden"
                                 id="pdf-upload"
-                                required
+                                required={!isEdit}
                             />
                             <label htmlFor="pdf-upload" className="cursor-pointer">
                                 {pdfFile ? (
@@ -308,7 +341,7 @@ export function UploadProductModal({ isOpen, onClose }: UploadProductModalProps)
                             disabled={uploading}
                             className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 transition-colors"
                         >
-                            {uploading ? 'Uploading...' : 'Upload Product'}
+                            {uploading ? (isEdit ? 'Updating...' : 'Uploading...') : (isEdit ? 'Save Changes' : 'Upload Product')}
                         </button>
                         <button
                             type="button"

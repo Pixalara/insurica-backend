@@ -14,7 +14,7 @@ export async function getProducts(filters?: {
   let query = supabase
     .from('products')
     .select('*', { count: 'exact' })
-    .order('created_at', { ascending: false })
+    .order('updated_at', { ascending: false, nullsFirst: false })
 
   // Apply filters
   if (filters?.query) {
@@ -62,11 +62,16 @@ export async function getProductById(id: string) {
 export async function createProduct(formData: ProductFormData) {
   const supabase = await createClient()
 
+  // Get current user (agent)
+  const { data: { user } } = await supabase.auth.getUser()
+
   const { data, error } = await supabase
     .from('products')
     .insert([{
       ...formData,
       features: formData.features ? formData.features.split(',').map(f => f.trim()) : [],
+      agent_id: user?.id || null,
+      updated_at: new Date().toISOString()
     }])
     .select()
     .single()

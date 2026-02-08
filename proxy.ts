@@ -2,7 +2,7 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 /**
- * Insurica Proxy (Next.js 16 Standard)
+ * Insurica Middleware (Next.js 16 Standard)
  * Handles authentication and session refreshing.
  */
 export async function proxy(request: NextRequest) {
@@ -44,8 +44,6 @@ export async function proxy(request: NextRequest) {
 
   return response
 }
-
-export default proxy;
 
 export const config = {
   matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],

@@ -2,7 +2,7 @@
 
 The following database tables need to be created in Supabase for the Insurica CRM.
 
-## 🚀 Universal Customer ID Schema (NEW - Run First!)
+## 🚀 Universal Customer ID Schema (Current Architecture)
 
 **Run this SQL in Supabase SQL Editor:**
 
@@ -17,37 +17,48 @@ This creates:
 
 ---
 
+## Schema Overview
 
-## Updates for Enhanced Features
+### Customers Table
+The `customers` table is the single source of truth for customer data:
 
-### 1. Update Clients Table (Universal Customer ID)
+| Column | Type | Description |
+|--------|------|-------------|
+| customer_id | UUID | Primary key |
+| full_name | TEXT | Customer's full name |
+| mobile_number | TEXT | Phone number (unique per agent) |
+| email | TEXT | Email address (optional) |
+| dob | DATE | Date of birth (optional) |
+| address | TEXT | Address (optional) |
+| agent_id | UUID | FK to profiles |
+| created_at | TIMESTAMPTZ | Creation timestamp |
+| updated_at | TIMESTAMPTZ | Last update timestamp |
 
-```sql
--- Add unique constraint to phone for customer lookup
--- Note: Only run if you're sure no duplicate phone numbers exist
-ALTER TABLE clients ADD CONSTRAINT unique_phone UNIQUE (phone);
+### Policies Table
+The `policies` table stores all policy data linked to customers:
 
--- OR if you have duplicates, first clean them up, then add constraint
--- You can query duplicates with:
--- SELECT phone, COUNT(*) FROM clients GROUP BY phone HAVING COUNT(*) > 1;
+| Column | Type | Description |
+|--------|------|-------------|
+| policy_id | UUID | Primary key |
+| customer_id | UUID | FK to customers |
+| policy_number | TEXT | Policy number |
+| product | TEXT | Product name |
+| insurance_company | TEXT | Insurer name |
+| policy_type | TEXT | 'General', 'Health', or 'Life' |
+| sum_insured | NUMERIC | Coverage amount |
+| start_date | DATE | Policy start date |
+| end_date | DATE | Policy end date |
+| premium | NUMERIC | Premium amount |
+| status | TEXT | 'Active', 'Expired', or 'Cancelled' |
+| remarks | TEXT | Additional notes |
+| created_at | TIMESTAMPTZ | Creation timestamp |
+| updated_at | TIMESTAMPTZ | Last update timestamp |
 
--- Create index for faster phone lookups
-CREATE INDEX IF NOT EXISTS idx_clients_phone ON clients(phone);
-```
+---
 
-### 2. Update Products Table (PDF Support)
+## Additional Tables
 
-```sql
--- Add PDF-related columns to products table
-ALTER TABLE products 
-  ADD COLUMN IF NOT EXISTS pdf_url TEXT,
-  ADD COLUMN IF NOT EXISTS pdf_filename TEXT;
-
--- Create index for insurer filtering
-CREATE INDEX IF NOT EXISTS idx_products_insurer ON products(insurer);
-```
-
-## 1. Products Table
+### Products Table
 
 ```sql
 CREATE TABLE IF NOT EXISTS products (
@@ -72,7 +83,7 @@ CREATE INDEX idx_products_category ON products(category);
 CREATE INDEX idx_products_status ON products(status);
 ```
 
-## 2. Leads Table
+### Leads Table
 
 ```sql
 CREATE TABLE leads (
@@ -93,74 +104,33 @@ CREATE INDEX idx_leads_status ON leads(status);
 CREATE INDEX idx_leads_email ON leads(email);
 ```
 
-## 3. Existing Tables
+## Module Usage
 
-The following modules use the existing `clients` table:
-- **Policies Module**: Uses `clients` table (already exists)
-- **Renewals Module**: Uses `clients` table (already exists)
-- **Clients Module**: Uses `clients` table (already exists)
+The following modules use the `customers` and `policies` tables:
+- **Dashboard**: Queries `policies` with customer joins for analytics
+- **Policies Module**: CRUD on `policies` table with customer references
+- **Clients Module**: Manages `customers` with their associated policies
+- **Renewals Module**: Queries `policies` for upcoming renewals
+- **Insurance Modules (General/Health/Life)**: Filtered views of `policies` by type
 
 ## Row Level Security (RLS)
 
-Make sure to enable RLS and create appropriate policies:
-
-```sql
--- Enable RLS
-ALTER TABLE products ENABLE ROW LEVEL SECURITY;
-ALTER TABLE leads ENABLE ROW LEVEL SECURITY;
-
--- Create policies (adjust based on your auth setup)
--- Example: Allow authenticated users to read all products
-CREATE POLICY "Allow authenticated users to read products" ON products
-  FOR SELECT TO authenticated USING (true);
-
-CREATE POLICY "Allow authenticated users to insert products" ON products
-  FOR INSERT TO authenticated WITH CHECK (true);
-
-CREATE POLICY "Allow authenticated users to update products" ON products
-  FOR UPDATE TO authenticated USING (true);
-
-CREATE POLICY "Allow authenticated users to delete products" ON products
-  FOR DELETE TO authenticated USING (true);
-
--- Similar policies for leads
-CREATE POLICY "Allow authenticated users to read leads" ON leads
-  FOR SELECT TO authenticated USING (true);
-
-CREATE POLICY "Allow authenticated users to insert leads" ON leads
-  FOR INSERT TO authenticated WITH CHECK (true);
-
-CREATE POLICY "Allow authenticated users to update leads" ON leads
-  FOR UPDATE TO authenticated USING (true);
-
-CREATE POLICY "Allow authenticated users to delete leads" ON leads
-  FOR DELETE TO authenticated USING (true);
-```
+RLS policies are defined in the migration file for:
+- `customers` - Authenticated read/insert/update
+- `policies` - Authenticated read/insert/update/delete
+- `products_catalogue` - Authenticated read/insert/update/delete
 
 ## Running the Migrations
 
 1. Go to your Supabase project dashboard
 2. Navigate to the SQL Editor
-3. Copy and paste each SQL block above
-4. Execute them one by one
-5. Verify the tables are created successfully
+3. Run `supabase/migrations/20260205_universal_customer_id.sql`
+4. Verify the tables are created successfully
 
-## Optional: Sample Data
+## Dropping Old Clients Table (Optional)
 
-You can add some sample data for testing:
+If migrating from the old schema with a `clients` table:
 
-```sql
--- Sample Products
-INSERT INTO products (name, category, insurer, coverage_amount, premium_range_min, premium_range_max, features, description, status)
-VALUES
-  ('Comprehensive Motor Insurance', 'General', 'HDFC ERGO', 500000, 8000, 15000, ARRAY['Zero Depreciation', 'Roadside Assistance', 'NCB Protection'], 'Full coverage for your vehicle', 'Active'),
-  ('Family Health Insurance', 'Health', 'Star Health', 1000000, 15000, 25000, ARRAY['Cashless Treatment', 'Pre-existing Disease Cover', 'Annual Health Checkup'], 'Comprehensive health coverage for family', 'Active'),
-  ('Term Life Insurance', 'Life', 'HDFC Life', 5000000, 10000, 20000, ARRAY['Life Cover', 'Accidental Death Benefit', 'Critical Illness Cover'], 'Secure your family future', 'Active');
+📁 File: `supabase/migrations/20260207_drop_clients_table.sql`
 
--- Sample Leads
-INSERT INTO leads (name, email, phone, interest, status, source, notes)
-VALUES
-  ('Rajesh Kumar', 'rajesh@example.com', '+91-9876543210', 'Motor Insurance', 'New', 'Website', 'Interested in comprehensive coverage'),
-  ('Priya Sharma', 'priya@example.com', '+91-9876543211', 'Health Insurance', 'Contacted', 'Referral', 'Looking for family floater plan'),
-  ('Amit Patel', 'amit@example.com', '+91-9876543212', 'Life Insurance', 'Qualified', 'Walk-in', 'Ready to purchase term plan');
-```
+> **Warning:** Only run this after migrating any existing data to the new schema.

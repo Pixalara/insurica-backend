@@ -11,6 +11,7 @@ export interface Product {
   status: 'Active' | 'Inactive'
   pdf_url?: string
   pdf_filename?: string
+  agent_id?: string
   created_at: string
   updated_at?: string
 }

@@ -21,7 +21,7 @@ EXCEPTION
 END $$;
 
 DO $$ BEGIN
-    CREATE TYPE public.policy_status AS ENUM ('Active', 'Inactive', 'Expired');
+    CREATE TYPE public.policy_status AS ENUM ('Active', 'Cancelled', 'Expired');
 EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;

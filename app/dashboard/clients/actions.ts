@@ -2,18 +2,18 @@
 
 import { createClient as createSupabaseClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
+import type { Customer, Policy, PolicyWithCustomer } from './types'
 
-export async function getClients({
+// ============================================
+// CUSTOMER OPERATIONS
+// ============================================
+
+export async function getCustomers({
   query = '',
-  status = 'All',
-  product = 'All',
   page = 1,
   limit = 10,
 }: {
   query?: string
-  status?: string
-  product?: string
   page?: number
   limit?: number
 }) {
@@ -21,113 +21,347 @@ export async function getClients({
   const offset = (page - 1) * limit
 
   let dbQuery = supabase
-    .from('clients')
+    .from('customers')
     .select('*', { count: 'exact' })
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1)
 
   if (query) {
-    dbQuery = dbQuery.or(`name.ilike.%${query}%,email.ilike.%${query}%,policy_number.ilike.%${query}%`)
+    dbQuery = dbQuery.or(`full_name.ilike.%${query}%,email.ilike.%${query}%,mobile_number.ilike.%${query}%`)
   }
 
-  if (status !== 'All') {
-    dbQuery = dbQuery.eq('status', status)
-  }
-
-  if (product !== 'All') {
-    const categoryMap: Record<string, string> = {
-      'Life Insurance': 'Life',
-      'General Insurance': 'General',
-      'Health Insurance': 'Health'
-    }
-    const category = categoryMap[product] || product
-    if (['Life', 'General', 'Health'].includes(category)) {
-        dbQuery = dbQuery.eq('category', category)
-    } else {
-        dbQuery = dbQuery.ilike('product_name', `%${product}%`)
-    }
-  }
-
-  const { data: clients, error, count } = await dbQuery
+  const { data: customers, error, count } = await dbQuery
 
   if (error) {
-    console.error('Error fetching clients:', error)
-    throw new Error('Failed to fetch clients')
-  }
-
-  // Manually fetch companies to avoid join errors
-  let clientsWithCompanies = clients
-  if (clients && clients.length > 0) {
-      const companyIds = Array.from(new Set(clients.map((c: any) => c.company_id).filter(Boolean)))
-      if (companyIds.length > 0) {
-          const { data: companies } = await supabase
-              .from('companies')
-              .select('id, name')
-              .in('id', companyIds)
-          
-          if (companies) {
-              const companyMap = new Map(companies.map((c: any) => [c.id, c]))
-              clientsWithCompanies = clients.map((client: any) => ({
-                  ...client,
-                  companies: client.company_id ? [companyMap.get(client.company_id) || { name: 'Unknown' }] : []
-              }))
-          }
-      }
+    console.error('Error fetching customers:', error)
+    throw new Error('Failed to fetch customers')
   }
 
   return {
-    clients: clientsWithCompanies,
+    customers: customers || [],
     totalPages: count ? Math.ceil(count / limit) : 0,
     currentPage: page,
     totalCount: count
   }
 }
 
-export async function getClient(id: string) {
+export async function getCustomer(id: string) {
   const supabase = await createSupabaseClient()
   const { data, error } = await supabase
-    .from('clients')
+    .from('customers')
     .select('*')
-    .eq('id', id)
+    .eq('customer_id', id)
     .single()
 
   if (error) {
-    console.error('Error fetching client:', error)
+    console.error('Error fetching customer:', error)
     return null
   }
 
-  return data
+  return data as Customer
 }
 
 /**
  * Find customer by phone number for Universal Customer ID lookup
- * Returns customer data if found, null if not found
  */
 export async function findCustomerByPhone(phone: string) {
   const supabase = await createSupabaseClient()
   
+  // Get current user (agent)
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    return { found: false, customer: null, error: 'Unauthorized' }
+  }
+
   // Clean phone number (remove spaces, dashes, etc.)
-  const cleanPhone = phone.replace(/[\s-()]/g, '')
+  const cleanPhone = phone.replace(/[\s\-()]/g, '')
   
+  // Check if customer already exists for this agent
   const { data, error } = await supabase
-    .from('clients')
-    .select('id, name, email, phone, created_at')
-    .or(`phone.eq.${phone},phone.eq.${cleanPhone}`)
-    .limit(1)
-    .single()
+    .from('customers')
+    .select('*')
+    .eq('agent_id', user.id)
+    .or(`mobile_number.eq."${phone}",mobile_number.eq."${cleanPhone}"`)
+    .maybeSingle()
 
   if (error) {
-    if (error.code === 'PGRST116') {
-      // No rows returned - customer not found
-      return { found: false, customer: null }
-    }
     console.error('Error searching customer by phone:', error)
     return { found: false, customer: null, error: error.message }
   }
 
-  return { found: true, customer: data }
+  if (!data) {
+    return { found: false, customer: null }
+  }
+
+  // Transform to format expected by frontend components
+  const customer = {
+    ...data,
+    id: data.customer_id,
+    name: data.full_name,
+    phone: data.mobile_number
+  }
+
+  return { found: true, customer }
 }
 
+export async function createCustomer(formData: {
+  full_name: string
+  mobile_number: string
+  email?: string
+  dob?: string
+  address?: string
+}) {
+  const supabase = await createSupabaseClient()
+  
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+
+  // Ensure user has a profile
+  const { data: profile } = await supabase.from('profiles').select('id').eq('id', user.id).single()
+  
+  if (!profile) {
+    const { error: createProfileError } = await supabase.from('profiles').insert({
+      id: user.id,
+      full_name: user.user_metadata?.full_name || 'Agent',
+      role: 'agent'
+    })
+    if (createProfileError) {
+      throw new Error(`Failed to create agent profile: ${createProfileError.message}`)
+    }
+  }
+
+  const { data, error } = await supabase
+    .from('customers')
+    .insert({
+      full_name: formData.full_name,
+      mobile_number: formData.mobile_number,
+      email: formData.email || null,
+      dob: formData.dob || null,
+      address: formData.address || null,
+      agent_id: user.id
+    })
+    .select()
+    .single()
+
+  if (error) {
+    console.error('Error creating customer:', error)
+    throw new Error(error.message)
+  }
+
+  revalidatePath('/dashboard/clients')
+  return data as Customer
+}
+
+export async function updateCustomer(id: string, formData: {
+  full_name?: string
+  mobile_number?: string
+  email?: string
+  dob?: string
+  address?: string
+}) {
+  const supabase = await createSupabaseClient()
+
+  const { error } = await supabase
+    .from('customers')
+    .update({
+      ...formData,
+      updated_at: new Date().toISOString()
+    })
+    .eq('customer_id', id)
+
+  if (error) {
+    console.error('Error updating customer:', error)
+    throw new Error('Failed to update customer')
+  }
+
+  revalidatePath('/dashboard/clients')
+  revalidatePath(`/dashboard/clients/${id}/edit`)
+}
+
+export async function deleteCustomer(id: string) {
+  const supabase = await createSupabaseClient()
+  
+  // First delete all policies for this customer
+  await supabase
+    .from('policies')
+    .delete()
+    .eq('customer_id', id)
+
+  const { error } = await supabase
+    .from('customers')
+    .delete()
+    .eq('customer_id', id)
+
+  if (error) {
+    console.error('Error deleting customer:', error)
+    throw new Error(`Failed to delete customer: ${error.message}`)
+  }
+
+  revalidatePath('/dashboard/clients')
+}
+
+// ============================================
+// POLICY OPERATIONS (for use by clients module)
+// ============================================
+
+export async function getPoliciesWithCustomers({
+  query = '',
+  status = 'All',
+  policyType = 'All',
+  page = 1,
+  limit = 10,
+}: {
+  query?: string
+  status?: string
+  policyType?: string
+  page?: number
+  limit?: number
+}) {
+  const supabase = await createSupabaseClient()
+  const offset = (page - 1) * limit
+
+  let dbQuery = supabase
+    .from('policies')
+    .select(`
+      *,
+      customer:customers(customer_id, full_name, mobile_number, email)
+    `, { count: 'exact' })
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1)
+
+  if (query) {
+    // Search in policies and use a separate subquery for customer search
+    dbQuery = dbQuery.or(`policy_number.ilike.%${query}%,product.ilike.%${query}%,insurance_company.ilike.%${query}%`)
+  }
+
+  if (status !== 'All') {
+    dbQuery = dbQuery.eq('status', status)
+  }
+
+  if (policyType !== 'All') {
+    const typeMap: Record<string, string> = {
+      'Life Insurance': 'Life',
+      'General Insurance': 'General',
+      'Health Insurance': 'Health'
+    }
+    const mappedType = typeMap[policyType] || policyType
+    if (['Life', 'General', 'Health'].includes(mappedType)) {
+      dbQuery = dbQuery.eq('policy_type', mappedType)
+    }
+  }
+
+  const { data: policies, error, count } = await dbQuery
+
+  if (error) {
+    console.error('Error fetching policies:', error)
+    throw new Error('Failed to fetch policies')
+  }
+
+  return {
+    policies: policies || [],
+    totalPages: count ? Math.ceil(count / limit) : 0,
+    currentPage: page,
+    totalCount: count
+  }
+}
+
+export async function createPolicy(formData: {
+  customer_id: string
+  policy_number?: string
+  product?: string
+  insurance_company: string
+  policy_type: 'General' | 'Health' | 'Life'
+  sum_insured?: number
+  start_date?: string
+  end_date?: string
+  premium?: number
+  remarks?: string
+  status?: 'Active' | 'Expired' | 'Cancelled'
+}) {
+  const supabase = await createSupabaseClient()
+
+  const { data, error } = await supabase
+    .from('policies')
+    .insert({
+      customer_id: formData.customer_id,
+      policy_number: formData.policy_number || null,
+      product: formData.product || null,
+      insurance_company: formData.insurance_company,
+      policy_type: formData.policy_type,
+      sum_insured: formData.sum_insured || null,
+      start_date: formData.start_date || null,
+      end_date: formData.end_date || null,
+      premium: formData.premium || null,
+      remarks: formData.remarks || null,
+      status: formData.status || 'Active'
+    })
+    .select()
+    .single()
+
+  if (error) {
+    console.error('Error creating policy:', error)
+    throw new Error(error.message)
+  }
+
+  revalidatePath('/dashboard/clients')
+  revalidatePath('/dashboard/policies')
+  return data as Policy
+}
+
+export async function updatePolicy(id: string, formData: {
+  policy_number?: string
+  product?: string
+  insurance_company?: string
+  policy_type?: 'General' | 'Health' | 'Life'
+  sum_insured?: number
+  start_date?: string
+  end_date?: string
+  premium?: number
+  remarks?: string
+  status?: 'Active' | 'Expired' | 'Cancelled'
+}) {
+  const supabase = await createSupabaseClient()
+
+  const { error } = await supabase
+    .from('policies')
+    .update({
+      ...formData,
+      updated_at: new Date().toISOString()
+    })
+    .eq('policy_id', id)
+
+  if (error) {
+    console.error('Error updating policy:', error)
+    throw new Error('Failed to update policy')
+  }
+
+  revalidatePath('/dashboard/clients')
+  revalidatePath('/dashboard/policies')
+}
+
+export async function deletePolicy(id: string) {
+  const supabase = await createSupabaseClient()
+
+  const { error } = await supabase
+    .from('policies')
+    .delete()
+    .eq('policy_id', id)
+
+  if (error) {
+    console.error('Error deleting policy:', error)
+    throw new Error(`Failed to delete policy: ${error.message}`)
+  }
+
+  revalidatePath('/dashboard/clients')
+  revalidatePath('/dashboard/policies')
+  revalidatePath('/dashboard/insurance/general')
+  revalidatePath('/dashboard/insurance/health')
+  revalidatePath('/dashboard/insurance/life')
+}
+
+// ============================================
+// METRICS & UTILITIES
+// ============================================
 
 export async function getCompanies(type?: 'General' | 'Health' | 'Life') {
   const supabase = await createSupabaseClient()
@@ -150,202 +384,293 @@ export async function getCompanies(type?: 'General' | 'Health' | 'Life') {
 export async function getClientMetrics() {
   const supabase = await createSupabaseClient()
 
-  // 1. Total Clients
-  const { count: totalClients } = await supabase
-    .from('clients')
+  // Total unique customers
+  const { count: totalCustomers } = await supabase
+    .from('customers')
     .select('*', { count: 'exact', head: true })
 
-  // 2. Active Policies
+  // Total policies
+  const { count: totalPolicies } = await supabase
+    .from('policies')
+    .select('*', { count: 'exact', head: true })
+
+  // Active Policies
   const { count: activePolicies } = await supabase
-    .from('clients')
+    .from('policies')
     .select('*', { count: 'exact', head: true })
     .eq('status', 'Active')
 
-  // 3. Pending Renewals (Expiring within 30 days)
+  // Pending Renewals (Expiring within 30 days)
   const today = new Date()
   const thirtyDaysFromNow = new Date()
   thirtyDaysFromNow.setDate(today.getDate() + 30)
 
-  // Assuming 'end_date' is the policy expiry date.
-  // We want policies that are active (or generally) but expiring soon.
-  // Usually pending renewal implies it hasn't expired yet but is close.
   const { count: pendingRenewals } = await supabase
-    .from('clients')
+    .from('policies')
     .select('*', { count: 'exact', head: true })
     .gte('end_date', today.toISOString())
     .lte('end_date', thirtyDaysFromNow.toISOString())
 
-  // 4. Total Premium (Sum of all premiums)
+  // Total Premium (Sum of all premiums)
   const { data: premiumData } = await supabase
-    .from('clients')
-    .select('premium_amount')
+    .from('policies')
+    .select('premium')
   
-  const totalPremium = premiumData?.reduce((sum, client) => {
-    return sum + (client.premium_amount || 0)
+  const totalPremium = premiumData?.reduce((sum, policy) => {
+    return sum + (policy.premium || 0)
   }, 0) || 0
 
   return {
-    totalClients: totalClients || 0,
+    totalClients: totalCustomers || 0,
+    totalPolicies: totalPolicies || 0,
     activePolicies: activePolicies || 0,
     pendingRenewals: pendingRenewals || 0,
     totalPremium
   }
 }
 
-export async function createClient(formData: any) {
+// ============================================
+// BACKWARD COMPATIBILITY ALIASES
+// ============================================
+
+// These functions maintain backward compatibility during transition
+export async function getClients(params: {
+  query?: string
+  status?: string
+  product?: string
+  page?: number
+  limit?: number
+}) {
+  const result = await getPoliciesWithCustomers({
+    query: params.query,
+    status: params.status,
+    policyType: params.product,
+    page: params.page,
+    limit: params.limit
+  })
+  
+  // Transform to old Client format for backward compatibility
+  const clients = result.policies.map((p: PolicyWithCustomer) => ({
+    id: p.policy_id,
+    policy_id: p.policy_id,
+    customer_id: p.customer_id,
+    name: p.customer?.full_name || 'Unknown',
+    phone: p.customer?.mobile_number || '',
+    email: p.customer?.email || '',
+    policy_number: p.policy_number || '',
+    category: p.policy_type,
+    product_name: p.product,
+    insurance_company: p.insurance_company,
+    sum_insured: p.sum_insured,
+    premium_amount: p.premium,
+    start_date: p.start_date,
+    end_date: p.end_date,
+    status: p.status,
+    created_at: p.created_at,
+    companies: [{ name: p.insurance_company }]
+  }))
+
+  return {
+    clients,
+    totalPages: result.totalPages,
+    currentPage: result.currentPage,
+    totalCount: result.totalCount
+  }
+}
+
+export async function getClient(id: string) {
   const supabase = await createSupabaseClient()
   
-  // Validate authentication
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { data, error } = await supabase
+    .from('policies')
+    .select(`
+      *,
+      customer:customers(customer_id, full_name, mobile_number, email, address, dob)
+    `)
+    .eq('policy_id', id)
+    .single()
 
-  if (!user) {
-    throw new Error('Unauthorized')
+  if (error) {
+    console.error('Error fetching policy:', error)
+    return null
   }
 
-  // Ensure user has a profile (required for foreign key agent_id)
+  // Transform to old Client format
+  return {
+    id: data.policy_id,
+    policy_id: data.policy_id,
+    customer_id: data.customer_id,
+    name: data.customer?.full_name || 'Unknown',
+    phone: data.customer?.mobile_number || '',
+    email: data.customer?.email || '',
+    policy_number: data.policy_number || '',
+    category: data.policy_type,
+    product_name: data.product,
+    insurance_company: data.insurance_company,
+    sum_insured: data.sum_insured,
+    premium_amount: data.premium,
+    start_date: data.start_date,
+    end_date: data.end_date,
+    status: data.status,
+    remarks: data.remarks,
+    created_at: data.created_at,
+    // Customer data for forms
+    customer: data.customer
+  }
+}
+
+export async function createClient(formData: {
+  customer_id?: string
+  name: string
+  phone?: string | null
+  email?: string | null
+  policy_number?: string
+  product_name?: string | null
+  insurance_company?: string
+  category?: 'General' | 'Health' | 'Life'
+  sum_insured?: string | number
+  start_date?: string | null
+  end_date?: string | null
+  premium_amount?: string | number
+  notes?: string
+  remarks?: string
+  status?: string
+}) {
+  const supabase = await createSupabaseClient()
+  
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+
+  // Ensure user has a profile
   const { data: profile } = await supabase.from('profiles').select('id').eq('id', user.id).single()
   
   if (!profile) {
-    console.log('Profile missing for user, attempting to create one...')
-    const { error: createProfileError } = await supabase.from('profiles').insert({
+    await supabase.from('profiles').insert({
       id: user.id,
       full_name: user.user_metadata?.full_name || 'Agent',
       role: 'agent'
     })
+  }
 
-    if (createProfileError) {
-      console.error('Failed to create missing profile:', createProfileError)
-      throw new Error(`Failed to create agent profile: ${createProfileError.message}`)
+  // Check if customer exists by phone
+  let customerId = formData.customer_id
+  
+  if (!customerId && formData.phone) {
+    const { found, customer } = await findCustomerByPhone(formData.phone)
+    if (found && customer) {
+      customerId = customer.customer_id
     }
   }
 
-  const {
-    name,
-    email,
-    phone,
-    policy_number,
-    category,
-    company_id,
-    product_name,
-    sum_insured,
-    premium_amount,
-    start_date,
-    end_date,
-    policy_duration,
-    notes,
-    status
-  } = formData
+  // Create customer if not exists
+  if (!customerId) {
+    const { data: newCustomer, error: customerError } = await supabase
+      .from('customers')
+      .insert({
+        full_name: formData.name,
+        mobile_number: formData.phone || '',
+        email: formData.email || null,
+        agent_id: user.id
+      })
+      .select()
+      .single()
 
-  const { error } = await supabase.from('clients').insert({
-    name,
-    email,
-    phone,
-    policy_number,
-    category,
-    company_id,
-    product_name,
-    sum_insured: sum_insured ? parseFloat(sum_insured) : null,
-    premium_amount: premium_amount ? parseFloat(premium_amount) : null,
-    start_date: start_date || null,
-    end_date: end_date || null,
-    policy_duration: policy_duration || null,
-    notes: notes || null,
-    status,
-    agent_id: user.id
-  })
+    if (customerError) {
+      throw new Error(`Failed to create customer: ${customerError.message}`)
+    }
+    customerId = newCustomer.customer_id
+  }
 
-  if (error) {
-    console.error('Error creating client:', error)
-    throw new Error(error.message)
+  // Create policy
+  const { error: policyError } = await supabase
+    .from('policies')
+    .insert({
+      customer_id: customerId as string,
+      policy_number: formData.policy_number || null,
+      product: formData.product_name || null,
+      insurance_company: formData.insurance_company || 'Unknown',
+      policy_type: formData.category || 'General',
+      sum_insured: formData.sum_insured ? parseFloat(formData.sum_insured.toString()) : null,
+      start_date: formData.start_date || null,
+      end_date: formData.end_date || null,
+      premium: formData.premium_amount ? parseFloat(formData.premium_amount.toString()) : null,
+      remarks: formData.notes || formData.remarks || null,
+      status: formData.status || 'Active'
+    })
+
+  if (policyError) {
+    throw new Error(policyError.message)
   }
 
   revalidatePath('/dashboard/clients')
-  revalidatePath('/dashboard/clients')
+  revalidatePath('/dashboard/policies')
 }
 
-export async function updateClient(id: string, formData: any) {
+export async function updateClient(id: string, formData: {
+  name: string
+  phone?: string | null
+  email?: string | null
+  policy_number?: string
+  product_name?: string | null
+  insurance_company?: string
+  category?: 'General' | 'Health' | 'Life'
+  sum_insured?: string | number
+  start_date?: string | null
+  end_date?: string | null
+  premium_amount?: string | number
+  notes?: string
+  remarks?: string
+  status?: string
+}) {
   const supabase = await createSupabaseClient()
-  
-  const {
-     name,
-    email,
-    phone,
-    policy_number,
-    category,
-    company_id,
-    product_name,
-    sum_insured,
-    premium_amount,
-    start_date,
-    end_date,
-    policy_duration,
-    notes,
-    status
-  } = formData
 
+  // Get current policy to find customer_id
+  const { data: currentPolicy } = await supabase
+    .from('policies')
+    .select('customer_id')
+    .eq('policy_id', id)
+    .single()
+
+  if (currentPolicy?.customer_id) {
+    // Update customer info
+    await supabase
+      .from('customers')
+      .update({
+        full_name: formData.name,
+        mobile_number: formData.phone || '',
+        email: formData.email || null,
+        updated_at: new Date().toISOString()
+      })
+      .eq('customer_id', currentPolicy.customer_id)
+  }
+
+  // Update policy
   const { error } = await supabase
-    .from('clients')
+    .from('policies')
     .update({
-      name,
-      email,
-      phone,
-      policy_number,
-      category,
-      company_id,
-      product_name,
-      sum_insured: sum_insured ? parseFloat(sum_insured) : null,
-      premium_amount: premium_amount ? parseFloat(premium_amount) : null,
-      start_date: start_date || null,
-      end_date: end_date || null,
-      policy_duration: policy_duration || null,
-      notes: notes || null,
-      status,
+      policy_number: formData.policy_number || null,
+      product: formData.product_name || null,
+      insurance_company: formData.insurance_company || 'Unknown',
+      policy_type: formData.category || 'General',
+      sum_insured: formData.sum_insured ? parseFloat(formData.sum_insured.toString()) : null,
+      start_date: formData.start_date || null,
+      end_date: formData.end_date || null,
+      premium: formData.premium_amount ? parseFloat(formData.premium_amount.toString()) : null,
+      remarks: formData.notes || formData.remarks || null,
+      status: formData.status || 'Active',
       updated_at: new Date().toISOString()
     })
-    .eq('id', id)
+    .eq('policy_id', id)
 
   if (error) {
-    console.error('Error updating client:', error)
-    throw new Error('Failed to update client')
+    throw new Error('Failed to update policy')
   }
 
   revalidatePath('/dashboard/clients')
-  revalidatePath('/dashboard/clients')
+  revalidatePath('/dashboard/policies')
   revalidatePath(`/dashboard/clients/${id}/edit`)
 }
 
 export async function deleteClient(id: string) {
-  const supabase = await createSupabaseClient()
-  console.log('Attempting to delete client with ID:', id)
-  
-  // First check if the client exists
-  const { data: existingClient, error: fetchError } = await supabase
-    .from('clients')
-    .select('id')
-    .eq('id', id)
-    .single()
-
-  if (fetchError || !existingClient) {
-      console.error('Client not found before delete:', fetchError)
-      throw new Error('Client not found or access denied')
-  }
-
-  const { error, count } = await supabase
-    .from('clients')
-    .delete({ count: 'exact' })
-    .eq('id', id)
-
-  if (error) {
-    console.error('Error deleting client:', error)
-    throw new Error(`Failed to delete client: ${error.message}`)
-  }
-
-  if (count === 0) {
-      throw new Error('Failed to delete client: Policy not found or access denied')
-  }
-
-  revalidatePath('/dashboard/clients')
-  revalidatePath('/dashboard/insurance/general')
+  return deletePolicy(id)
 }

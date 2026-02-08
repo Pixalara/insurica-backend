@@ -1,5 +1,7 @@
 export interface GeneralPolicy {
-  id: string
+  id: string  // Alias for policy_id for backward compatibility
+  policy_id: string
+  customer_id: string
   policyNumber: string
   holderName: string
   contactNumber: string
@@ -10,5 +12,5 @@ export interface GeneralPolicy {
   endDate: string // ISO date string
   amountPaid: number
   sumInsured: number
-  status: 'Active' | 'Inactive' | 'Expired'
+  status: 'Active' | 'Expired' | 'Cancelled'
 }

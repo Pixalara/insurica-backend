@@ -47,7 +47,7 @@ export default function EditHealthPolicyPage({ params }: { params: Promise<{ id:
                         holderName: client.name,
                         contactNumber: client.phone || '',
                         email: client.email || '',
-                        companyId: client.company_id,
+                        companyId: client.insurance_company || '',
                         productName: client.product_name || '',
                         policyNumber: client.policy_number,
                         startDate: client.start_date || '',
@@ -55,7 +55,7 @@ export default function EditHealthPolicyPage({ params }: { params: Promise<{ id:
                         premium: client.premium_amount?.toString() || '',
                         sumInsured: client.sum_insured?.toString() || '',
                         status: client.status || 'Active',
-                        notes: client.notes || ''
+                        notes: client.remarks || ''
                     })
                 } else {
                     toast.error('Policy not found')
@@ -107,8 +107,8 @@ export default function EditHealthPolicyPage({ params }: { params: Promise<{ id:
                 email: formData.email || null,
                 phone: formData.contactNumber || null,
                 policy_number: formData.policyNumber,
-                category: 'Health', // Hardcoded for Health section
-                company_id: formData.companyId,
+                category: 'Health' as const, // Hardcoded for Health section
+                insurance_company: formData.companyId,
                 product_name: formData.productName,
                 sum_insured: formData.sumInsured,
                 premium_amount: formData.premium,
@@ -342,7 +342,7 @@ export default function EditHealthPolicyPage({ params }: { params: Promise<{ id:
                                 onChange={handleChange}
                             >
                                 <option value="Active">Active</option>
-                                <option value="Inactive">Inactive</option>
+                                <option value="Cancelled">Cancelled</option>
                                 <option value="Expired">Expired</option>
                             </select>
                         </div>

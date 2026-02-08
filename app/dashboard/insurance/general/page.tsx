@@ -4,11 +4,11 @@ import { useState, useEffect, Suspense } from 'react'
 import { Search } from 'lucide-react'
 import { GeneralTable } from './_components/general-table'
 import { GeneralPolicy } from './types'
-import { getClients, deleteClient } from '../../clients/actions'
 import { Client } from '../../clients/types'
+import { getClients, deleteClient } from '../../clients/actions'
 import { toast } from 'sonner'
 
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 
 export default function GeneralInsurancePage() {
     return (
@@ -35,31 +35,30 @@ function GeneralInsuranceContent() {
             const { clients } = await getClients({ product: 'General Insurance' })
             
             const generalPolicies: GeneralPolicy[] = clients.map((c: Client) => {
-
-                let insurerName = 'Unknown Insurer'
-                const companiesData = c.companies as any
-
-                if (companiesData) {
-                    if (Array.isArray(companiesData) && companiesData.length > 0) {
-                        insurerName = companiesData[0]?.name || 'Unknown Insurer'
-                    } else if (typeof companiesData === 'object' && companiesData.name) {
-                        insurerName = companiesData.name
-                    }
+                // Get insurer name from the backward compat mapping
+                let insurerName = c.insurance_company || 'Unknown Insurer'
+                const companiesData = c.companies
+                if (Array.isArray(companiesData) && companiesData.length > 0) {
+                    insurerName = (companiesData[0] as { name: string }).name || insurerName
+                } else if (typeof companiesData === 'object' && companiesData && 'name' in companiesData) {
+                    insurerName = (companiesData as unknown as { name: string }).name
                 }
 
                 return {
-                    id: c.id,
-                    policyNumber: c.policy_number,
-                    holderName: c.name,
+                    id: c.id || c.policy_id,
+                    policy_id: c.policy_id,
+                    customer_id: c.customer_id,
+                    policyNumber: c.policy_number || '',
+                    holderName: c.name || 'Unknown',
                     contactNumber: c.phone || '',
                     email: c.email || '',
                     type: c.product_name || 'General',
-                    insurerName: insurerName || 'Unknown Insurer',
+                    insurerName: insurerName,
                     startDate: c.start_date || new Date().toISOString(),
                     endDate: c.end_date || new Date().toISOString(),
                     amountPaid: c.premium_amount || 0,
                     sumInsured: c.sum_insured || 0,
-                    status: (c.status as any) || 'Active'
+                    status: (c.status as 'Active' | 'Expired' | 'Cancelled') || 'Active'
                 }
             })
             
