@@ -8,7 +8,7 @@ export interface Product {
   premium_range_max?: number
   features?: string[]
   description?: string
-  status: 'Active' | 'Cancelled'
+  status: 'Active' | 'Inactive'
   pdf_url?: string
   pdf_filename?: string
   agent_id?: string

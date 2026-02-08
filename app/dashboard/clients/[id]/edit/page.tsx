@@ -97,12 +97,12 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
       }
 
       try {
-        const data = await getCompanies(category)
-        setCompanies(data as any[]) 
+        const companiesData = await getCompanies(category) as Company[] 
+        setCompanies(companiesData) 
         
         // After fetching companies, try to match the existing insuranceCompany name to an ID
-        if (insuranceCompany && data) {
-          const match = (data as Company[]).find(c => 
+        if (insuranceCompany && companiesData) {
+          const match = (companiesData as Company[]).find(c => 
             c.name.toLowerCase() === insuranceCompany.toLowerCase()
           )
           if (match) {
@@ -174,9 +174,10 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
 
       toast.success('Client updated successfully', { id: toastId })
       router.push('/dashboard/clients')
-    } catch (error: any) {
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       console.error('Update error', error)
-      toast.error('Failed to update client: ' + error.message, { id: toastId })
+      toast.error('Failed to update: ' + errorMessage, { id: toastId })
       setSaving(false)
     }
   }
@@ -261,7 +262,7 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
                 required
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium appearance-none"
                 value={category}
-                onChange={(e) => setCategory(e.target.value as any)}
+                  onChange={(e) => setCategory(e.target.value as typeof CATEGORIES[number])}
               >
                 <option value="">Select Category</option>
                 {CATEGORIES.map(cat => (

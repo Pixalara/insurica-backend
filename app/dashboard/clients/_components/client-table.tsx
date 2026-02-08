@@ -62,7 +62,7 @@ export function ClientTable({ clients }: ClientTableProps) {
                                 if (Array.isArray(client.companies) && client.companies.length > 0) {
                                     displayInsurer = client.companies[0].name
                                 } else if (!Array.isArray(client.companies)) {
-                                     displayInsurer = (client.companies as any).name
+                                     displayInsurer = (client.companies as unknown as { name: string }).name
                                 }
                             }
 

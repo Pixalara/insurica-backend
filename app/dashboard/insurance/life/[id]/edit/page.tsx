@@ -109,7 +109,7 @@ export default function EditLifePolicyPage({ params }: { params: Promise<{ id: s
                 email: formData.email || null,
                 phone: formData.contactNumber || null,
                 policy_number: formData.policyNumber,
-                category: 'Life',
+                category: 'Life' as const,
                 insurance_company: formData.companyId,
                 product_name: formData.productName,
                 sum_insured: formData.sumInsured,

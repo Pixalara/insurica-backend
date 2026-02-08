@@ -109,7 +109,7 @@ export default function EditGeneralPolicyPage({ params }: { params: Promise<{ id
                 email: formData.email || null,
                 phone: formData.contactNumber || null,
                 policy_number: formData.policyNumber,
-                category: 'General',
+                category: 'General' as const,
                 insurance_company: formData.companyId,
                 product_name: formData.productName,
                 sum_insured: formData.sumInsured,

@@ -19,7 +19,7 @@ type Company = {
 export default function NewClientPage() {
   // Customer Search State
   const [customerFound, setCustomerFound] = useState(false)
-  const [foundCustomer, setFoundCustomer] = useState<any>(null)
+  const [foundCustomer, setFoundCustomer] = useState<{ id: string; name: string; phone: string; email: string | null } | null>(null)
   const [showForm, setShowForm] = useState(false)
 
   // Required Fields
@@ -49,7 +49,7 @@ export default function NewClientPage() {
   const router = useRouter()
 
   // Handle customer found
-  const handleCustomerFound = (customer: any) => {
+  const handleCustomerFound = (customer: { id: string; name: string; phone: string; email: string | null }) => {
     setCustomerFound(true)
     setFoundCustomer(customer)
     setShowForm(true)
@@ -83,7 +83,7 @@ export default function NewClientPage() {
       setFetchingCompanies(true)
       try {
         const data = await getCompanies(category)
-        setCompanies(data as any[])
+        setCompanies(data as Company[])
       } catch (err) {
         console.error('Failed to fetch companies', err)
         toast.error('Failed to load companies')
@@ -151,9 +151,10 @@ export default function NewClientPage() {
 
       toast.success(customerFound ? 'New policy added to existing customer' : 'New customer and policy created', { id: toastId })
       router.push('/dashboard/clients')
-    } catch (error: any) {
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       console.error('Save error', error)
-      toast.error('Failed to save: ' + error.message, { id: toastId })
+      toast.error('Failed to save: ' + errorMessage, { id: toastId })
       setLoading(false)
     }
   }
@@ -279,7 +280,7 @@ export default function NewClientPage() {
                   required
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium appearance-none"
                   value={category}
-                  onChange={(e) => setCategory(e.target.value as any)}
+                  onChange={(e) => setCategory(e.target.value as typeof CATEGORIES[number])}
                 >
                   <option value="">Select Category</option>
                   {CATEGORIES.map(cat => (

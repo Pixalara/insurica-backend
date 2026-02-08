@@ -5,7 +5,7 @@ import { findCustomerByPhone } from '../actions'
 import { toast } from 'sonner'
 
 interface CustomerSearchProps {
-    onCustomerFound: (customer: any) => void
+    onCustomerFound: (customer: { id: string; name: string; phone: string; email: string | null }) => void
     onCustomerNotFound: () => void
 }
 

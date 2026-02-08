@@ -146,7 +146,22 @@ export default function EditPolicyPage({ params }: { params: Promise<{ id: strin
     const toastId = toast.loading('Updating policy...')
 
     try {
-      const formData = {
+      const formData: {
+        name: string;
+        email: string | null;
+        phone: string | null;
+        policy_number: string;
+        category: "General" | "Health" | "Life";
+        insurance_company: string;
+        product_name: string | null;
+        sum_insured: string;
+        premium_amount: string;
+        start_date: string;
+        end_date: string;
+        policy_duration: string;
+        notes: string;
+        status: string;
+      } = {
         name,
         email: email || null,
         phone: phone || null,
@@ -255,7 +270,7 @@ export default function EditPolicyPage({ params }: { params: Promise<{ id: strin
                 required
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium appearance-none"
                 value={category}
-                onChange={(e) => setCategory(e.target.value as any)}
+                onChange={(e) => setCategory(e.target.value as typeof CATEGORIES[number])}
               >
                 <option value="">Select Category</option>
                 {CATEGORIES.map(cat => (

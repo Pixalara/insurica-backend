@@ -107,7 +107,7 @@ export default function EditHealthPolicyPage({ params }: { params: Promise<{ id:
                 email: formData.email || null,
                 phone: formData.contactNumber || null,
                 policy_number: formData.policyNumber,
-                category: 'Health', // Hardcoded for Health section
+                category: 'Health' as const, // Hardcoded for Health section
                 insurance_company: formData.companyId,
                 product_name: formData.productName,
                 sum_insured: formData.sumInsured,
