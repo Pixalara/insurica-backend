@@ -4,6 +4,59 @@ import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 import type { Product, ProductFormData } from './types'
 
+/**
+ * Upload PDF to Supabase Storage and return public URL
+ */
+export async function uploadProductPDF(formData: FormData) {
+  const supabase = await createClient()
+  
+  const file = formData.get('file') as File
+  if (!file) {
+    return { success: false, error: 'No file provided' }
+  }
+
+  // Validate file type
+  if (file.type !== 'application/pdf') {
+    return { success: false, error: 'Only PDF files are allowed' }
+  }
+
+  // Validate file size (10MB max)
+  if (file.size > 10 * 1024 * 1024) {
+    return { success: false, error: 'File size must be less than 10MB' }
+  }
+
+  // Generate unique filename
+  const timestamp = Date.now()
+  const cleanName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
+  const filename = `${timestamp}_${cleanName}`
+
+  // Upload to Supabase Storage
+  const { data, error } = await supabase.storage
+    .from('product-pdfs')
+    .upload(filename, file, {
+      cacheControl: '3600',
+      upsert: false,
+    })
+
+  if (error) {
+    console.error('Error uploading PDF:', error)
+    return { success: false, error: error.message }
+  }
+
+  // Get public URL
+  const { data: urlData } = supabase.storage
+    .from('product-pdfs')
+    .getPublicUrl(data.path)
+
+  return {
+    success: true,
+    url: urlData.publicUrl,
+    filename: file.name,
+    path: data.path,
+  }
+}
+
+
 export async function getProducts(filters?: {
   query?: string
   category?: string

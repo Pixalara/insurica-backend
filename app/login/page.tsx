@@ -8,7 +8,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
-  
+
   const supabase = createClient()
   const router = useRouter()
 
@@ -18,7 +18,7 @@ export default function LoginPage() {
     setErrorMsg(null)
 
     const { error } = await supabase.auth.signInWithPassword({ email, password })
-    
+
     if (error) {
       setErrorMsg(error.message)
       setLoading(false)
@@ -35,7 +35,7 @@ export default function LoginPage() {
         <div className="max-w-md">
           <h2 className="text-4xl font-bold mb-6 text-blue-400">Insurica.</h2>
           <p className="text-xl text-slate-300 leading-relaxed">
-            The intelligent dashboard for modern insurance agents. 
+            The intelligent dashboard for modern insurance agents.
             Manage clients, track renewals, and scale your agency with precision.
           </p>
           <div className="mt-12 pt-12 border-t border-slate-800">
@@ -47,10 +47,16 @@ export default function LoginPage() {
       </div>
 
       {/* Right Side: Login Form */}
-      <div className="flex flex-col justify-center items-center p-8">
+      <div className="flex flex-col justify-center items-center p-6 sm:p-8">
         <div className="w-full max-w-sm space-y-8">
+          {/* Mobile Branding - Only visible on mobile */}
+          <div className="lg:hidden text-center mb-6">
+            <h2 className="text-3xl font-bold text-blue-600 mb-2">Insurica.</h2>
+            <p className="text-sm text-slate-500">The intelligent dashboard for modern insurance agents</p>
+          </div>
+
           <div className="text-center lg:text-left">
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
               Welcome back
             </h1>
             <p className="mt-2 text-sm text-slate-500">
@@ -64,23 +70,23 @@ export default function LoginPage() {
                 {errorMsg}
               </div>
             )}
-            
+
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-semibold text-slate-700">Email Address</label>
-                <input 
-                  type="email" 
+                <input
+                  type="email"
                   required
                   placeholder="name@agency.com"
                   className="mt-1 block w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-semibold text-slate-700">Password</label>
-                <input 
-                  type="password" 
+                <input
+                  type="password"
                   required
                   placeholder="••••••••"
                   className="mt-1 block w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
@@ -89,8 +95,8 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               disabled={loading}
               className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             >

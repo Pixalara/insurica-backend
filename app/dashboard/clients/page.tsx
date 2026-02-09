@@ -28,7 +28,7 @@ export default async function ClientsPage({
 
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 overflow-x-hidden">
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Client Directory</h1>
@@ -46,8 +46,8 @@ export default async function ClientsPage({
 
       <ClientFilters />
 
-      <ClientTable clients={clients as Client[]} /> 
-      
+      <ClientTable clients={clients as Client[]} />
+
       <div className="text-center text-xs text-slate-400 mt-4">
         Showing {clients.length} of {totalCount} clients
       </div>

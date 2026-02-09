@@ -11,7 +11,7 @@ interface PolicyStatsProps {
 
 export function PolicyStats({ stats }: PolicyStatsProps) {
     return (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             <div className="bg-white p-5 rounded-xl border border-slate-200">
                 <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Policies</p>
                 <p className="text-3xl font-black text-slate-900 mt-2">{stats.total}</p>

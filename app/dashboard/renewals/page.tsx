@@ -21,7 +21,7 @@ export default async function RenewalsPage({
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 overflow-x-hidden">
             <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900">Policy Renewals</h1>

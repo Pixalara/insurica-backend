@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { X, Upload, FileText, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
-import { createProduct, updateProduct } from '../actions'
+import { createProduct, updateProduct, uploadProductPDF } from '../actions'
 import { useRouter } from 'next/navigation'
 import type { Product } from '../types'
 
@@ -106,13 +106,25 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
         const toastId = toast.loading(isEdit ? 'Updating product...' : 'Uploading product...')
 
         try {
-            // In a real implementation, you would:
-            // 1. Upload file to Supabase Storage
-            // 2. Get the public URL
-            // 3. Save product record with PDF URL
+            let pdfUrl = product?.pdf_url
+            let pdfFilename = product?.pdf_filename
 
-            // For now, we'll create without PDF upload
-            // You'll need to implement uploadProductPDF in actions.ts
+            // Upload PDF if a new file is selected
+            if (pdfFile) {
+                const uploadFormData = new FormData()
+                uploadFormData.append('file', pdfFile)
+
+                const uploadResult = await uploadProductPDF(uploadFormData)
+
+                if (!uploadResult.success) {
+                    toast.error(`Failed to upload PDF: ${uploadResult.error}`, { id: toastId })
+                    setUploading(false)
+                    return
+                }
+
+                pdfUrl = uploadResult.url
+                pdfFilename = uploadResult.filename
+            }
 
             const formData = {
                 name: productName,
@@ -121,11 +133,11 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
                 coverage_amount: coverageAmount ? parseFloat(coverageAmount) : undefined,
                 premium_range_min: premiumMin ? parseFloat(premiumMin) : undefined,
                 premium_range_max: premiumMax ? parseFloat(premiumMax) : undefined,
-                description: description || undefined, 
+                description: description || undefined,
                 features: '',
                 status: 'Active' as const,
-                // TODO: Add pdf_url and pdf_filename after implementing file upload
-                pdf_filename: pdfFile?.name || product?.pdf_filename || ''
+                pdf_url: pdfUrl,
+                pdf_filename: pdfFilename,
             }
 
             if (isEdit && product) {

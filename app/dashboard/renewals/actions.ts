@@ -103,5 +103,12 @@ export async function markAsRenewed(policyId: string, newEndDate: string) {
     return { success: false, error: error.message }
   }
 
+  // Revalidate all related pages for cross-page data sync
+  const { revalidatePath } = await import('next/cache')
+  revalidatePath('/dashboard')
+  revalidatePath('/dashboard/clients')
+  revalidatePath('/dashboard/policies')
+  revalidatePath('/dashboard/renewals')
+
   return { success: true, data }
 }
