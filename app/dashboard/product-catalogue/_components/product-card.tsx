@@ -1,6 +1,6 @@
 'use client'
 
-import { Download, Share2, FileText, IndianRupee, Pencil, Trash2 } from 'lucide-react'
+import { Download, Share2, FileText } from 'lucide-react'
 import { toast } from 'sonner'
 import type { Product } from '../types'
 
@@ -66,20 +66,18 @@ export function ProductCard({ product, onEdit, onDelete }: ProductCardProps) {
                     <span className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${getCategoryColor(product.category)}`}>
                         {product.category}
                     </span>
-                    <div className="flex gap-1.5">
+                    <div className="flex gap-2">
                         <button
                             onClick={() => onEdit(product)}
-                            className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                            title="Edit Product"
+                            className="text-blue-600 hover:text-blue-800 text-xs font-semibold transition-colors"
                         >
-                            <Pencil className="w-4 h-4" />
+                            Edit
                         </button>
                         <button
                             onClick={() => onDelete(product.id)}
-                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Delete Product"
+                            className="text-red-500 hover:text-red-700 text-xs font-semibold transition-colors"
                         >
-                            <Trash2 className="w-4 h-4" />
+                            Delete
                         </button>
                     </div>
                 </div>
@@ -124,8 +122,8 @@ export function ProductCard({ product, onEdit, onDelete }: ProductCardProps) {
 
                 {/* PDF Status */}
                 <div className={`flex items-center gap-2 text-xs px-3 py-2 rounded-lg ${product.pdf_url
-                        ? 'bg-blue-50 text-blue-600'
-                        : 'bg-amber-50 text-amber-600'
+                    ? 'bg-blue-50 text-blue-600'
+                    : 'bg-amber-50 text-amber-600'
                     }`}>
                     <FileText className="w-3.5 h-3.5" />
                     {product.pdf_url ? 'PDF Brochure Available' : 'PDF Coming Soon'}
