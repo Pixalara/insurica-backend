@@ -44,7 +44,7 @@ export function ClientTable({ clients }: ClientTableProps) {
     return (
         <>
             <div className="overflow-x-auto border border-slate-200 rounded-lg shadow-sm">
-                <table className="w-full text-sm text-left">
+                <table className="w-full text-sm text-left min-w-[800px]">
                     <thead className="bg-slate-50 text-slate-700 font-medium">
                         <tr>
                             <th className="px-4 py-3">Client Name</th>

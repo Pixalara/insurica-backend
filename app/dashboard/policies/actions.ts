@@ -127,8 +127,10 @@ export async function updatePolicy(id: string, formData: PolicyFormData) {
     return { success: false, error: error.message }
   }
 
+  revalidatePath('/dashboard')
   revalidatePath('/dashboard/policies')
   revalidatePath('/dashboard/clients')
+  revalidatePath('/dashboard/renewals')
   return { success: true, data }
 }
 
@@ -145,8 +147,10 @@ export async function deletePolicy(id: string) {
     return { success: false, error: error.message }
   }
 
+  revalidatePath('/dashboard')
   revalidatePath('/dashboard/policies')
   revalidatePath('/dashboard/clients')
+  revalidatePath('/dashboard/renewals')
   return { success: true }
 }
 

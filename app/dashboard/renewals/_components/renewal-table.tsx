@@ -37,7 +37,7 @@ export function RenewalTable({ renewals }: RenewalTableProps) {
     return (
         <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
             <div className="overflow-x-auto">
-                <table className="w-full">
+                <table className="w-full min-w-[800px]">
                     <thead className="bg-slate-50 border-b border-slate-200">
                         <tr>
                             <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">
@@ -75,10 +75,10 @@ export function RenewalTable({ renewals }: RenewalTableProps) {
                                 </td>
                                 <td className="px-6 py-4">
                                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${renewal.policy_type === 'Health'
-                                            ? 'bg-green-100 text-green-800'
-                                            : renewal.policy_type === 'Life'
-                                                ? 'bg-purple-100 text-purple-800'
-                                                : 'bg-blue-100 text-blue-800'
+                                        ? 'bg-green-100 text-green-800'
+                                        : renewal.policy_type === 'Life'
+                                            ? 'bg-purple-100 text-purple-800'
+                                            : 'bg-blue-100 text-blue-800'
                                         }`}>
                                         {renewal.policy_type}
                                     </span>

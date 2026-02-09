@@ -23,25 +23,60 @@ export function ProductCard({ product, onEdit, onDelete }: ProductCardProps) {
         }).format(val)
     }
 
-    // Download PDF handler
-    const handleDownload = () => {
+    // Download PDF handler - forces actual file download
+    const handleDownload = async () => {
         if (!product.pdf_url) {
             toast.error('PDF not available for this product')
             return
         }
-        window.open(product.pdf_url, '_blank')
-        toast.success('Opening PDF...')
+
+        try {
+            toast.loading('Downloading PDF...', { id: 'download' })
+
+            // Fetch the PDF file
+            const response = await fetch(product.pdf_url)
+            if (!response.ok) throw new Error('Failed to fetch PDF')
+
+            const blob = await response.blob()
+
+            // Create download link
+            const url = window.URL.createObjectURL(blob)
+            const link = document.createElement('a')
+            link.href = url
+            link.download = product.pdf_filename || `${product.name}.pdf`
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+            window.URL.revokeObjectURL(url)
+
+            toast.success('PDF downloaded!', { id: 'download' })
+        } catch (error) {
+            console.error('Download error:', error)
+            // Fallback: open in new tab
+            window.open(product.pdf_url, '_blank')
+            toast.success('Opening PDF...', { id: 'download' })
+        }
     }
 
     // WhatsApp share handler
     const handleWhatsAppShare = () => {
-        if (!product.pdf_url) {
-            toast.error('PDF not available to share')
-            return
+        // Build message with product details
+        let message = `*${product.name}*\nBy ${product.insurer}`
+
+        if (product.coverage_amount) {
+            message += `\nCoverage: ${formatCurrency(product.coverage_amount)}`
         }
 
-        const message = `*${product.name}*\nBy ${product.insurer}\nCoverage: ${formatCurrency(product.coverage_amount)}\n\nBrochure: ${product.pdf_url}`
-        const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`
+        if (product.description) {
+            message += `\n\n${product.description}`
+        }
+
+        if (product.pdf_url) {
+            message += `\n\nDownload Brochure: ${product.pdf_url}`
+        }
+
+        // Use api.whatsapp.com which works on both desktop and mobile
+        const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`
         window.open(whatsappUrl, '_blank')
         toast.success('Opening WhatsApp...')
     }
@@ -135,7 +170,10 @@ export function ProductCard({ product, onEdit, onDelete }: ProductCardProps) {
                 <button
                     onClick={handleDownload}
                     disabled={!product.pdf_url}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg font-semibold text-sm hover:bg-blue-700 transition-colors"
+                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-semibold text-sm transition-colors ${product.pdf_url
+                            ? 'bg-blue-600 text-white hover:bg-blue-700'
+                            : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                        }`}
                 >
                     <Download className="w-4 h-4" />
                     Download
@@ -143,7 +181,6 @@ export function ProductCard({ product, onEdit, onDelete }: ProductCardProps) {
 
                 <button
                     onClick={handleWhatsAppShare}
-                    disabled={!product.pdf_url}
                     className="flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 text-white rounded-lg font-semibold text-sm hover:bg-green-700 transition-colors"
                     title="Share via WhatsApp"
                 >

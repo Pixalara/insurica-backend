@@ -10,7 +10,7 @@ interface ClientStatsProps {
 }
 
 export function ClientStats({ stats: { totalClients, activePolicies, pendingRenewals, totalPremium } }: ClientStatsProps) {
-    
+
     const formatPremium = (amount: number) => {
         if (amount >= 100000) {
             return `₹${(amount / 100000).toFixed(1)}L`
@@ -54,7 +54,7 @@ export function ClientStats({ stats: { totalClients, activePolicies, pendingRene
     ]
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             {statsData.map((stat, i) => {
                 const Icon = stat.icon
                 return (

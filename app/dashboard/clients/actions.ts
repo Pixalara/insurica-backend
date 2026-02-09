@@ -148,7 +148,11 @@ export async function createCustomer(formData: {
     throw new Error(error.message)
   }
 
+  // Revalidate all related pages for cross-page data sync
+  revalidatePath('/dashboard')
   revalidatePath('/dashboard/clients')
+  revalidatePath('/dashboard/policies')
+  revalidatePath('/dashboard/renewals')
   return data as Customer
 }
 
@@ -174,7 +178,11 @@ export async function updateCustomer(id: string, formData: {
     throw new Error('Failed to update customer')
   }
 
+  // Revalidate all related pages for cross-page data sync
+  revalidatePath('/dashboard')
   revalidatePath('/dashboard/clients')
+  revalidatePath('/dashboard/policies')
+  revalidatePath('/dashboard/renewals')
   revalidatePath(`/dashboard/clients/${id}/edit`)
 }
 
@@ -546,6 +554,7 @@ export async function createClient(formData: {
   name: string
   phone?: string | null
   email?: string | null
+  dob?: string | null
   policy_number?: string
   product_name?: string | null
   insurance_company?: string
@@ -592,6 +601,7 @@ export async function createClient(formData: {
         full_name: formData.name,
         mobile_number: formData.phone || '',
         email: formData.email || null,
+        dob: formData.dob || null,
         agent_id: user.id
       })
       .select()
@@ -624,8 +634,11 @@ export async function createClient(formData: {
     throw new Error(policyError.message)
   }
 
+  // Revalidate all related pages for cross-page data sync
+  revalidatePath('/dashboard')
   revalidatePath('/dashboard/clients')
   revalidatePath('/dashboard/policies')
+  revalidatePath('/dashboard/renewals')
 }
 
 export async function updateClient(id: string, formData: {
@@ -688,8 +701,11 @@ export async function updateClient(id: string, formData: {
     throw new Error('Failed to update policy')
   }
 
+  // Revalidate all related pages for cross-page data sync
+  revalidatePath('/dashboard')
   revalidatePath('/dashboard/clients')
   revalidatePath('/dashboard/policies')
+  revalidatePath('/dashboard/renewals')
   revalidatePath(`/dashboard/clients/${id}/edit`)
 }
 

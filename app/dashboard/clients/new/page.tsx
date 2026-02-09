@@ -19,13 +19,14 @@ type Company = {
 export default function NewClientPage() {
   // Customer Search State
   const [customerFound, setCustomerFound] = useState(false)
-  const [foundCustomer, setFoundCustomer] = useState<{ id: string; name: string; phone: string; email: string | null } | null>(null)
+  const [foundCustomer, setFoundCustomer] = useState<{ id: string; name: string; phone: string; email: string | null; dob: string | null } | null>(null)
   const [showForm, setShowForm] = useState(false)
 
   // Required Fields
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
+  const [dob, setDob] = useState('')
   const [policyNumber, setPolicyNumber] = useState('')
   const [category, setCategory] = useState<typeof CATEGORIES[number] | ''>('')
 
@@ -49,15 +50,16 @@ export default function NewClientPage() {
   const router = useRouter()
 
   // Handle customer found
-  const handleCustomerFound = (customer: { id: string; name: string; phone: string; email: string | null }) => {
+  const handleCustomerFound = (customer: { id: string; name: string; phone: string; email: string | null; dob?: string | null }) => {
     setCustomerFound(true)
-    setFoundCustomer(customer)
+    setFoundCustomer({ ...customer, dob: customer.dob || null })
     setShowForm(true)
 
     // Auto-fill customer data (read-only)
     setName(customer.name || '')
     setEmail(customer.email || '')
     setPhone(customer.phone || '')
+    setDob(customer.dob || '')
   }
 
   // Handle customer not found
@@ -70,6 +72,7 @@ export default function NewClientPage() {
     setName('')
     setEmail('')
     setPhone('')
+    setDob('')
   }
 
   useEffect(() => {
@@ -134,6 +137,7 @@ export default function NewClientPage() {
         name,
         email: email || null,
         phone: phone || null,
+        dob: dob || null,
         policy_number: policyNumber,
         category,
         insurance_company: companies.find(c => c.id === selectedCompanyId)?.name || selectedCompanyId,
@@ -160,12 +164,12 @@ export default function NewClientPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto pb-10">
+    <div className="max-w-4xl mx-auto pb-10 px-4 sm:px-0">
       <div className="mb-6">
         <Link href="/dashboard/clients" className="text-slate-500 hover:text-slate-800 gap-2 mb-2 inline-flex items-center">
           <ArrowLeft className="w-4 h-4" /> Back to Directory
         </Link>
-        <h1 className="text-3xl font-bold text-slate-900">Add New Client / Policy</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Add New Client / Policy</h1>
         <p className="text-slate-500 text-sm mt-1">Search for existing customer or create new one - Zero re-entry guaranteed</p>
       </div>
 
@@ -188,7 +192,7 @@ export default function NewClientPage() {
             </div>
           </div>
           <div className="bg-white rounded-lg p-4 mt-3">
-            <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
               <div><span className="font-semibold">Name:</span> {foundCustomer.name}</div>
               <div><span className="font-semibold">Phone:</span> {foundCustomer.phone}</div>
               <div><span className="font-semibold">Email:</span> {foundCustomer.email || 'N/A'}</div>
@@ -213,7 +217,7 @@ export default function NewClientPage() {
 
       {/* Phase 2: Form (shown after search) */}
       {showForm && (
-        <form onSubmit={handleSubmit} className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-6">
+        <form onSubmit={handleSubmit} className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-slate-200 space-y-6">
 
           {/* Customer Information Section */}
           <div>
@@ -264,6 +268,22 @@ export default function NewClientPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="e.g. john@example.com"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">
+                  Date of Birth <span className="text-red-500">*</span>
+                  {customerFound && <span className="ml-2 text-amber-600">(Locked)</span>}
+                </label>
+                <input
+                  type="date"
+                  required={!customerFound}
+                  readOnly={customerFound}
+                  className={`w-full border rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium ${customerFound ? 'bg-amber-50 border-amber-300 cursor-not-allowed' : 'bg-slate-50 border-slate-200'
+                    }`}
+                  value={dob}
+                  onChange={(e) => setDob(e.target.value)}
                 />
               </div>
             </div>

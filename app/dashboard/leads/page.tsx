@@ -24,11 +24,11 @@ export default async function LeadsPage({
   const stats = await getLeadMetrics()
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 overflow-x-hidden">
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
         <div>
-            <h1 className="text-2xl font-bold text-slate-900">Lead Management</h1>
-            <p className="text-slate-500 text-sm">All Your Leads in One Place</p>
+          <h1 className="text-2xl font-bold text-slate-900">Lead Management</h1>
+          <p className="text-slate-500 text-sm">All Your Leads in One Place</p>
         </div>
         <AddLeadButton />
       </div>
@@ -38,7 +38,7 @@ export default async function LeadsPage({
       <LeadsFilter />
 
       <LeadsTable leads={leads} />
-      
+
       <div className="text-center text-xs text-slate-400 mt-4">
         Showing {leads.length} of {totalCount} leads
       </div>
