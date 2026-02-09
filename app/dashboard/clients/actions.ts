@@ -220,6 +220,21 @@ export async function getPoliciesWithCustomers({
   const supabase = await createSupabaseClient()
   const offset = (page - 1) * limit
 
+  // If there's a search query, we need to search both policies AND customers
+  // Since Supabase doesn't support filtering on joined columns directly,
+  // we first find matching customer IDs, then include those in the policy query
+  let matchingCustomerIds: string[] = []
+  
+  if (query) {
+    // Find customers matching the search query
+    const { data: matchingCustomers } = await supabase
+      .from('customers')
+      .select('customer_id')
+      .or(`full_name.ilike.%${query}%,email.ilike.%${query}%,mobile_number.ilike.%${query}%`)
+    
+    matchingCustomerIds = matchingCustomers?.map(c => c.customer_id) || []
+  }
+
   let dbQuery = supabase
     .from('policies')
     .select(`
@@ -230,8 +245,15 @@ export async function getPoliciesWithCustomers({
     .range(offset, offset + limit - 1)
 
   if (query) {
-    // Search in policies and use a separate subquery for customer search
-    dbQuery = dbQuery.or(`policy_number.ilike.%${query}%,product.ilike.%${query}%,insurance_company.ilike.%${query}%`)
+    // Build the OR condition to search in policy fields AND matching customer IDs
+    let orConditions = `policy_number.ilike.%${query}%,product.ilike.%${query}%,insurance_company.ilike.%${query}%`
+    
+    if (matchingCustomerIds.length > 0) {
+      // Add condition to include policies for matching customers
+      orConditions += `,customer_id.in.(${matchingCustomerIds.join(',')})`
+    }
+    
+    dbQuery = dbQuery.or(orConditions)
   }
 
   if (status !== 'All') {

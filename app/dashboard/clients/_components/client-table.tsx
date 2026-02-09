@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import Link from 'next/link'
 import { Client } from '../types'
 import { deleteClient } from '../actions'
-import { Pencil, Trash2 } from 'lucide-react'
+
 import { toast } from 'sonner'
 
 interface ClientTableProps {
@@ -62,7 +62,7 @@ export function ClientTable({ clients }: ClientTableProps) {
                                 if (Array.isArray(client.companies) && client.companies.length > 0) {
                                     displayInsurer = client.companies[0].name
                                 } else if (!Array.isArray(client.companies)) {
-                                     displayInsurer = (client.companies as unknown as { name: string }).name
+                                    displayInsurer = (client.companies as unknown as { name: string }).name
                                 }
                             }
 
@@ -92,11 +92,10 @@ export function ClientTable({ clients }: ClientTableProps) {
                                         <div className="text-xs text-slate-500">{client.policy_number}</div>
                                     </td>
                                     <td className="px-4 py-4">
-                                        <span className={`inline-flex px-2.5 py-1 text-xs font-semibold rounded-full border ${
-                                            client.status === 'Active' ? 'bg-green-50 text-green-700 border-green-200' :
+                                        <span className={`inline-flex px-2.5 py-1 text-xs font-semibold rounded-full border ${client.status === 'Active' ? 'bg-green-50 text-green-700 border-green-200' :
                                             client.status === 'Expired' ? 'bg-red-50 text-red-700 border-red-200' :
-                                            'bg-slate-100 text-slate-700 border-slate-200'
-                                        }`}>
+                                                'bg-slate-100 text-slate-700 border-slate-200'
+                                            }`}>
                                             {client.status || 'Active'}
                                         </span>
                                     </td>
@@ -111,21 +110,19 @@ export function ClientTable({ clients }: ClientTableProps) {
                                         </div>
                                     </td>
                                     <td className="px-4 py-4 text-right">
-                                        <div className="flex items-center justify-end gap-2">
+                                        <div className="flex items-center justify-end gap-3">
                                             <Link
                                                 href={`/dashboard/clients/${client.id}/edit`}
-                                                className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                                                title="Edit Details"
+                                                className="text-blue-600 hover:text-blue-800 text-sm font-semibold transition-colors"
                                             >
-                                                <Pencil size={16} />
+                                                Edit
                                             </Link>
                                             <button
                                                 onClick={() => setConfirmDeleteId(client.id)}
                                                 disabled={deletingId === client.id}
-                                                className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all disabled:opacity-50"
-                                                title="Delete Client"
+                                                className="text-red-500 hover:text-red-700 text-sm font-semibold transition-colors disabled:opacity-50"
                                             >
-                                                <Trash2 size={16} />
+                                                {deletingId === client.id ? 'Deleting...' : 'Delete'}
                                             </button>
                                         </div>
                                     </td>

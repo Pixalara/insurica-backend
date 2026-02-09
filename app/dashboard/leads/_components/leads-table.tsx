@@ -4,7 +4,7 @@
 import { useState } from 'react'
 import { Lead } from '../types'
 import { deleteLead } from '../actions'
-import { Pencil, Trash2 } from 'lucide-react'
+
 import { toast } from 'sonner'
 import { LeadDialog } from './lead-dialog'
 
@@ -100,37 +100,34 @@ export function LeadsTable({ leads }: LeadsTableProps) {
                                         <div className="text-sm text-slate-700 font-medium">{lead.product_name || 'N/A'}</div>
                                     </td>
                                     <td className="px-4 py-4">
-                                         <div className="text-sm text-slate-700 font-medium">
-                                            {lead.premium_quoted 
+                                        <div className="text-sm text-slate-700 font-medium">
+                                            {lead.premium_quoted
                                                 ? new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(lead.premium_quoted)
                                                 : 'N/A'}
                                         </div>
                                     </td>
                                     <td className="px-4 py-4">
-                                        <span className={`inline-flex px-2.5 py-1 text-xs font-semibold rounded-full border ${
-                                            lead.status === 'Closed' ? 'bg-green-50 text-green-700 border-green-200' :
+                                        <span className={`inline-flex px-2.5 py-1 text-xs font-semibold rounded-full border ${lead.status === 'Closed' ? 'bg-green-50 text-green-700 border-green-200' :
                                             lead.status === 'Lost' ? 'bg-red-50 text-red-700 border-red-200' :
-                                            'bg-amber-50 text-amber-700 border-amber-200'
-                                        }`}>
+                                                'bg-amber-50 text-amber-700 border-amber-200'
+                                            }`}>
                                             {lead.status}
                                         </span>
                                     </td>
                                     <td className="px-4 py-4 text-right">
-                                        <div className="flex items-center justify-end gap-2">
+                                        <div className="flex items-center justify-end gap-3">
                                             <button
                                                 onClick={() => handleEdit(lead)}
-                                                className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                                                title="Edit Details"
+                                                className="text-blue-600 hover:text-blue-800 text-sm font-semibold transition-colors"
                                             >
-                                                <Pencil size={16} />
+                                                Edit
                                             </button>
                                             <button
                                                 onClick={() => setConfirmDeleteId(lead.id)}
                                                 disabled={deletingId === lead.id}
-                                                className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all disabled:opacity-50"
-                                                title="Delete Lead"
+                                                className="text-red-500 hover:text-red-700 text-sm font-semibold transition-colors disabled:opacity-50"
                                             >
-                                                <Trash2 size={16} />
+                                                {deletingId === lead.id ? 'Deleting...' : 'Delete'}
                                             </button>
                                         </div>
                                     </td>
@@ -141,10 +138,10 @@ export function LeadsTable({ leads }: LeadsTableProps) {
                 </table>
             </div>
 
-            <LeadDialog 
-                isOpen={isDialogOpen} 
-                onClose={closeDialog} 
-                leadToEdit={editingLead} 
+            <LeadDialog
+                isOpen={isDialogOpen}
+                onClose={closeDialog}
+                leadToEdit={editingLead}
             />
 
             {/* Custom Delete Confirmation Modal */}

@@ -3,7 +3,7 @@
 import React from 'react'
 import Link from 'next/link'
 import { LifePolicy } from '../types'
-import { Pencil, Trash2 } from 'lucide-react'
+
 
 interface LifeTableProps {
     policies: LifePolicy[]
@@ -61,20 +61,18 @@ export function LifeTable({ policies, onDelete }: LifeTableProps) {
                                 </span>
                             </td>
                             <td className="px-4 py-3 text-right">
-                                <div className="flex items-center justify-end gap-2">
+                                <div className="flex items-center justify-end gap-3">
                                     <Link
                                         href={`/dashboard/insurance/life/${policy.id}/edit`}
-                                        className="p-1.5 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
-                                        title="Edit"
+                                        className="text-blue-600 hover:text-blue-800 text-sm font-semibold transition-colors"
                                     >
-                                        <Pencil size={16} />
+                                        Edit
                                     </Link>
                                     <button
                                         onClick={() => setConfirmDeleteId(policy.id)}
-                                        className="p-1.5 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
-                                        title="Delete"
+                                        className="text-red-500 hover:text-red-700 text-sm font-semibold transition-colors"
                                     >
-                                        <Trash2 size={16} />
+                                        Delete
                                     </button>
                                 </div>
                             </td>
