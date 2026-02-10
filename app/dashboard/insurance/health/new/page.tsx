@@ -4,11 +4,9 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
-import { createClient } from '@/utils/supabase/client'
 
 export default function NewHealthPolicyPage() {
     const router = useRouter()
-    const supabase = createClient()
 
     const [loading, setLoading] = useState(false)
     const [formData, setFormData] = useState({

@@ -18,7 +18,6 @@ export default function NewProductPage() {
         premium_range_max: undefined,
         features: '',
         description: '',
-        status: 'Active',
     })
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -161,20 +160,6 @@ export default function NewProductPage() {
                     />
                 </div>
 
-                {/* Status */}
-                <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                        Status
-                    </label>
-                    <select
-                        value={formData.status}
-                        onChange={(e) => setFormData({ ...formData, status: e.target.value as 'Active' | 'Inactive' })}
-                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                        <option value="Active">Active</option>
-                        <option value="Inactive">Inactive</option>
-                    </select>
-                </div>
 
                 {/* Action Buttons */}
                 <div className="flex gap-4 pt-4">

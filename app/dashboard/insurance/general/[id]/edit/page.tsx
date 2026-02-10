@@ -6,7 +6,6 @@ import Link from 'next/link'
 import { ArrowLeft, Trash2, Edit2, Save, X } from 'lucide-react'
 import { getClient, updateClient, deleteClient, getCompanies } from '../../../../clients/actions'
 import { toast } from 'sonner'
-import { Client } from '../../../../clients/types'
 
 export default function EditGeneralPolicyPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params)

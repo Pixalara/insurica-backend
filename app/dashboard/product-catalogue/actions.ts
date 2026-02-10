@@ -16,7 +16,10 @@ export async function uploadProductPDF(formData: FormData) {
   }
 
   // Validate file type
-  if (file.type !== 'application/pdf') {
+  const isPdfMime = file.type === 'application/pdf'
+  const isPdfExt = file.name.toLowerCase().endsWith('.pdf')
+  
+  if (!isPdfMime && !isPdfExt) {
     return { success: false, error: 'Only PDF files are allowed' }
   }
 
@@ -60,7 +63,6 @@ export async function uploadProductPDF(formData: FormData) {
 export async function getProducts(filters?: {
   query?: string
   category?: string
-  status?: string
 }) {
   const supabase = await createClient()
   
@@ -78,9 +80,6 @@ export async function getProducts(filters?: {
     query = query.eq('category', filters.category)
   }
   
-  if (filters?.status && filters.status !== 'All') {
-    query = query.eq('status', filters.status)
-  }
 
   const { data, error, count } = await query
 
@@ -164,6 +163,36 @@ export async function updateProduct(id: string, formData: ProductFormData) {
 export async function deleteProduct(id: string) {
   const supabase = await createClient()
 
+  // 1. Get the product first to get the PDF URL
+  const { data: product, error: fetchError } = await supabase
+    .from('products')
+    .select('pdf_url')
+    .eq('id', id)
+    .single()
+
+  if (fetchError) {
+    console.error('Error fetching product for deletion:', fetchError)
+    // Continue anyway to try to delete the record
+  }
+
+  // 2. Delete from Storage if PDF exists
+  if (product?.pdf_url) {
+    try {
+      const url = new URL(product.pdf_url)
+      const pathParts = url.pathname.split('/')
+      const filename = pathParts[pathParts.length - 1]
+      
+      if (filename) {
+        await supabase.storage
+          .from('product-pdfs')
+          .remove([filename])
+      }
+    } catch (err) {
+      console.error('Error parsing PDF URL for deletion:', err)
+    }
+  }
+
+  // 3. Delete from Database
   const { error } = await supabase
     .from('products')
     .delete()
@@ -175,5 +204,23 @@ export async function deleteProduct(id: string) {
   }
 
   revalidatePath('/dashboard/product-catalogue')
+  return { success: true }
+}
+
+/**
+ * Delete PDF from Supabase Storage
+ */
+export async function deleteProductPDF(path: string) {
+  const supabase = await createClient()
+
+  const { error } = await supabase.storage
+    .from('product-pdfs')
+    .remove([path])
+
+  if (error) {
+    console.error('Error deleting PDF from storage:', error)
+    return { success: false, error: error.message }
+  }
+
   return { success: true }
 }

@@ -5,12 +5,12 @@ import Link from 'next/link'
 interface Column {
     key: string
     label: string
-    render?: (value: any, row: any) => React.ReactNode
+    render?: (value: unknown, row: Record<string, unknown>) => React.ReactNode
 }
 
 interface DataTableProps {
     columns: Column[]
-    data: any[]
+    data: Record<string, unknown>[]
     title: string
     viewAllLink?: string
 }
@@ -51,7 +51,7 @@ export function DataTable({ columns, data, title, viewAllLink }: DataTableProps)
                                 <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
                                     {columns.map((col) => (
                                         <td key={`${idx}-${col.key}`} className="px-6 py-4 text-sm text-slate-700">
-                                            {col.render ? col.render(row[col.key], row) : row[col.key]}
+                                            {col.render ? col.render(row[col.key], row) : (row[col.key] as React.ReactNode)}
                                         </td>
                                     ))}
                                 </tr>

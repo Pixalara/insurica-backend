@@ -1,6 +1,4 @@
-import { Upload } from 'lucide-react'
 import { getProducts } from './actions'
-import { ProductCard } from './_components/product-card'
 import { ProductCatalogueClient } from './_components/product-catalogue-client'
 
 export default async function ProductCataloguePage({
@@ -14,7 +12,6 @@ export default async function ProductCataloguePage({
     const { products, totalCount } = await getProducts({
         query,
         category: category !== 'All' ? category : undefined,
-        status: 'Active'
     })
 
     // Filter by insurer on the client side if needed

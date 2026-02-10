@@ -1,6 +1,6 @@
 'use client'
 
-import { ArrowLeft, Phone, Mail, Calendar, Info, FileText, CheckCircle, AlertCircle } from 'lucide-react'
+import { ArrowLeft, Phone, Mail, FileText, CheckCircle, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 

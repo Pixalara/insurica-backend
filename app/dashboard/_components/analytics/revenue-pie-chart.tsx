@@ -24,6 +24,7 @@ export function RevenuePieChart({ data }: RevenuePieChartProps) {
     const [mounted, setMounted] = useState(false)
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setMounted(true)
     }, [])
 
@@ -47,7 +48,7 @@ export function RevenuePieChart({ data }: RevenuePieChartProps) {
                             ))}
                         </Pie>
                         <Tooltip
-                            formatter={(value: any) => formatCurrency(value)}
+                            formatter={(value: number | string | undefined) => formatCurrency(Number(value || 0))}
                             contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                         />
                         <Legend verticalAlign="bottom" height={36} />

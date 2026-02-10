@@ -43,7 +43,6 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
   const [notes, setNotes] = useState('')
   const [status, setStatus] = useState('Active')
 
-  const [initialLoad, setInitialLoad] = useState(true)
 
   const router = useRouter()
 

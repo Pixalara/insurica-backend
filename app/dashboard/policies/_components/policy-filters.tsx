@@ -6,7 +6,7 @@ import { useState, useTransition } from 'react'
 export function PolicyFilters() {
     const router = useRouter()
     const searchParams = useSearchParams()
-    const [isPending, startTransition] = useTransition()
+    const [, startTransition] = useTransition()
 
     const [query, setQuery] = useState(searchParams.get('query') || '')
     const category = searchParams.get('category') || 'All'

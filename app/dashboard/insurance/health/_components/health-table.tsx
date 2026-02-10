@@ -3,7 +3,6 @@
 import React from 'react'
 import Link from 'next/link'
 import { HealthPolicy } from '../types'
-import { Pencil, Trash2 } from 'lucide-react'
 
 interface HealthTableProps {
     policies: HealthPolicy[]
