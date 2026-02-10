@@ -6,11 +6,10 @@ import { useState, useTransition } from 'react'
 export function ProductFilters() {
     const router = useRouter()
     const searchParams = useSearchParams()
-    const [isPending, startTransition] = useTransition()
+    const [, startTransition] = useTransition()
 
     const [query, setQuery] = useState(searchParams.get('query') || '')
     const category = searchParams.get('category') || 'All'
-    const status = searchParams.get('status') || 'All'
 
     const handleSearch = (value: string) => {
         setQuery(value)
@@ -37,21 +36,10 @@ export function ProductFilters() {
         })
     }
 
-    const handleStatusChange = (value: string) => {
-        const params = new URLSearchParams(searchParams.toString())
-        if (value === 'All') {
-            params.delete('status')
-        } else {
-            params.set('status', value)
-        }
-        startTransition(() => {
-            router.push(`/dashboard/product-catalogue?${params.toString()}`)
-        })
-    }
 
     return (
         <div className="bg-white p-4 rounded-xl border border-slate-200">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Search */}
                 <div>
                     <label className="block text-xs font-medium text-slate-600 mb-2">Search Products</label>
@@ -79,19 +67,6 @@ export function ProductFilters() {
                     </select>
                 </div>
 
-                {/* Status Filter */}
-                <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-2">Status</label>
-                    <select
-                        value={status}
-                        onChange={(e) => handleStatusChange(e.target.value)}
-                        className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                        <option value="All">All Statuses</option>
-                        <option value="Active">Active</option>
-                        <option value="Inactive">Inactive</option>
-                    </select>
-                </div>
             </div>
         </div>
     )

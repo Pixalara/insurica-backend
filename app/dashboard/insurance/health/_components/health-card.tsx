@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { HealthPolicy } from '../types'
-import { Phone, Mail, Calendar, Heart, Shield, Users, ArrowRight, Activity } from 'lucide-react'
+import { Calendar, Shield, Users, ArrowRight } from 'lucide-react'
 
 interface HealthCardProps {
     policy: HealthPolicy

@@ -8,7 +8,6 @@ export interface Product {
   premium_range_max?: number
   features?: string[]
   description?: string
-  status: 'Active' | 'Inactive'
   pdf_url?: string
   pdf_filename?: string
   agent_id?: string
@@ -25,7 +24,6 @@ export interface ProductFormData {
   premium_range_max?: number
   features?: string
   description?: string
-  status: 'Active' | 'Inactive'
-  pdf_url?: string
-  pdf_filename?: string
+  pdf_url?: string | null
+  pdf_filename?: string | null
 }

@@ -94,6 +94,7 @@ ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Users can view own audit logs" ON audit_logs;
 DROP POLICY IF EXISTS "Service role can insert audit logs" ON audit_logs;
+DROP POLICY IF EXISTS "Authenticated can insert audit logs" ON audit_logs;
 
 CREATE POLICY "Users can view own audit logs" ON audit_logs
   FOR SELECT USING (user_id = auth.uid());

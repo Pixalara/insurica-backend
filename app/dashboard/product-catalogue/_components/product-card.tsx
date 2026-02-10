@@ -1,6 +1,6 @@
 'use client'
 
-import { Download, Share2, FileText } from 'lucide-react'
+import { Download, Share2 } from 'lucide-react'
 import { toast } from 'sonner'
 import type { Product } from '../types'
 
@@ -155,14 +155,6 @@ export function ProductCard({ product, onEdit, onDelete }: ProductCardProps) {
                     </p>
                 )}
 
-                {/* PDF Status */}
-                <div className={`flex items-center gap-2 text-xs px-3 py-2 rounded-lg ${product.pdf_url
-                    ? 'bg-blue-50 text-blue-600'
-                    : 'bg-amber-50 text-amber-600'
-                    }`}>
-                    <FileText className="w-3.5 h-3.5" />
-                    {product.pdf_url ? 'PDF Brochure Available' : 'PDF Coming Soon'}
-                </div>
             </div>
 
             {/* Action Buttons */}

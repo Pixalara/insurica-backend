@@ -72,7 +72,7 @@ export function LeadDialog({ isOpen, onClose, leadToEdit }: LeadDialogProps) {
         toast.success('Lead created successfully')
       }
       onClose()
-    } catch (error) {
+    } catch {
       toast.error('Something went wrong. Please try again.')
     } finally {
       setLoading(false)

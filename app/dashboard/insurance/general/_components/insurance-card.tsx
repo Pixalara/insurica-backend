@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { GeneralPolicy } from '../types'
-import { Phone, Mail, Calendar, CreditCard, Shield, FileText, ArrowRight } from 'lucide-react'
+import { Phone, Mail, Calendar, CreditCard, ArrowRight } from 'lucide-react'
 
 interface InsuranceCardProps {
     policy: GeneralPolicy

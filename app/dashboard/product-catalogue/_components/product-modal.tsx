@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { X, Upload, FileText, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
-import { createProduct, updateProduct, uploadProductPDF } from '../actions'
+import { createProduct, updateProduct, uploadProductPDF, deleteProductPDF } from '../actions'
 import { useRouter } from 'next/navigation'
 import type { Product } from '../types'
 
@@ -24,6 +24,8 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
     const [premiumMax, setPremiumMax] = useState(product?.premium_range_max?.toString() || '')
     const [description, setDescription] = useState(product?.description || '')
     const [pdfFile, setPdfFile] = useState<File | null>(null)
+    const [existingPdfUrl, setExistingPdfUrl] = useState(product?.pdf_url || '')
+    const [existingPdfName, setExistingPdfName] = useState(product?.pdf_filename || '')
     const [uploading, setUploading] = useState(false)
     const [errors, setErrors] = useState<string[]>([])
 
@@ -37,6 +39,8 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
             setPremiumMin(product.premium_range_min?.toString() || '')
             setPremiumMax(product.premium_range_max?.toString() || '')
             setDescription(product.description || '')
+            setExistingPdfUrl(product.pdf_url || '')
+            setExistingPdfName(product.pdf_filename || '')
         } else {
             // Reset for new product
             setProductName('')
@@ -46,6 +50,8 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
             setPremiumMin('')
             setPremiumMax('')
             setDescription('')
+            setExistingPdfUrl('')
+            setExistingPdfName('')
         }
         setPdfFile(null)
         setErrors([])
@@ -57,7 +63,10 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
         const validationErrors: string[] = []
 
         // Check file type
-        if (file.type !== 'application/pdf') {
+        const isPdfMime = file.type === 'application/pdf'
+        const isPdfExt = file.name.toLowerCase().endsWith('.pdf')
+        
+        if (!isPdfMime && !isPdfExt) {
             validationErrors.push('Only PDF files are allowed')
         }
 
@@ -79,11 +88,43 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
 
         if (validationErrors.length === 0) {
             setPdfFile(file)
+            setExistingPdfUrl('') // Clear existing if new one is selected
             toast.success(`File selected: ${file.name}`)
         } else {
             setPdfFile(null)
             e.target.value = '' // Reset file input
         }
+    }
+
+    const handleRemovePdf = async (e: React.MouseEvent) => {
+        e.preventDefault()
+        e.stopPropagation()
+
+        // If it's an existing PDF in storage, we might want to delete it from storage
+        // However, to keep it safe (in case user cancels), we usually just clear the state
+        // The user specifically asked to delete it from storage tooo.
+        
+        if (existingPdfUrl) {
+            // Extract path from URL - assuming standard Supabase URL structure
+            // https://.../storage/v1/object/public/product-pdfs/filename
+            try {
+                const url = new URL(existingPdfUrl)
+                const pathParts = url.pathname.split('/')
+                const filename = pathParts[pathParts.length - 1]
+                
+                if (filename) {
+                    await deleteProductPDF(filename)
+                }
+            } catch (err) {
+                console.error('Error parsing PDF URL:', err)
+            }
+        }
+
+        setPdfFile(null)
+        setExistingPdfUrl('')
+        setExistingPdfName('')
+        const fileInput = document.getElementById('pdf-upload') as HTMLInputElement
+        if (fileInput) fileInput.value = ''
     }
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -106,8 +147,8 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
         const toastId = toast.loading(isEdit ? 'Updating product...' : 'Uploading product...')
 
         try {
-            let pdfUrl = product?.pdf_url
-            let pdfFilename = product?.pdf_filename
+            let pdfUrl: string | undefined = existingPdfUrl
+            let pdfFilename: string | undefined = existingPdfName
 
             // Upload PDF if a new file is selected
             if (pdfFile) {
@@ -135,9 +176,8 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
                 premium_range_max: premiumMax ? parseFloat(premiumMax) : undefined,
                 description: description || undefined,
                 features: '',
-                status: 'Active' as const,
-                pdf_url: pdfUrl,
-                pdf_filename: pdfFilename,
+                pdf_url: pdfFile ? (pdfUrl || null) : (existingPdfUrl || null),
+                pdf_filename: pdfFile ? (pdfFilename || null) : (existingPdfName || null),
             }
 
             if (isEdit && product) {
@@ -317,32 +357,47 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
                         <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">
                             {isEdit ? 'Update PDF (Optional)' : 'Upload PDF'} {!isEdit && <span className="text-red-500">*</span>}
                         </label>
-                        <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
+                        <div className="relative border-2 border-dashed border-slate-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
                             <input
                                 type="file"
                                 accept=".pdf"
                                 onChange={handleFileChange}
                                 className="hidden"
                                 id="pdf-upload"
-                                required={!isEdit}
+                                required={!isEdit && !pdfFile && !existingPdfUrl}
                             />
-                            <label htmlFor="pdf-upload" className="cursor-pointer">
-                                {pdfFile ? (
-                                    <div className="flex items-center justify-center gap-3">
-                                        <FileText className="w-8 h-8 text-green-600" />
+                            
+                            {(pdfFile || existingPdfUrl) ? (
+                                <div className="flex items-center justify-between bg-slate-50 p-3 rounded-lg border border-slate-200">
+                                    <div className="flex items-center gap-3">
+                                        <div className="bg-red-50 p-2 rounded-lg">
+                                            <FileText className="w-6 h-6 text-red-600" />
+                                        </div>
                                         <div className="text-left">
-                                            <p className="font-semibold text-slate-900">{pdfFile.name}</p>
-                                            <p className="text-xs text-slate-500">{(pdfFile.size / 1024).toFixed(2)} KB</p>
+                                            <p className="font-semibold text-slate-900 text-sm truncate max-w-[300px]">
+                                                {pdfFile ? pdfFile.name : existingPdfName}
+                                            </p>
+                                            <p className="text-xs text-slate-500">
+                                                {pdfFile ? `${(pdfFile.size / 1024).toFixed(2)} KB` : 'Existing Brochure'}
+                                            </p>
                                         </div>
                                     </div>
-                                ) : (
-                                    <div>
-                                        <Upload className="w-12 h-12 text-slate-400 mx-auto mb-3" />
-                                        <p className="font-semibold text-slate-700">Click to upload PDF</p>
-                                        <p className="text-xs text-slate-500 mt-1">PDF only, max 10MB</p>
-                                    </div>
-                                )}
-                            </label>
+                                    <button
+                                        type="button"
+                                        onClick={handleRemovePdf}
+                                        className="p-1.5 hover:bg-red-100 text-slate-400 hover:text-red-600 rounded-full transition-colors"
+                                        title="Remove PDF"
+                                    >
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            ) : (
+                                <label htmlFor="pdf-upload" className="cursor-pointer block">
+                                    <Upload className="w-12 h-12 text-slate-400 mx-auto mb-3" />
+                                    <p className="font-semibold text-slate-700">Click to upload PDF</p>
+                                    <p className="text-xs text-slate-500 mt-1">PDF only, max 10MB</p>
+                                </label>
+                            )}
                         </div>
                     </div>
 

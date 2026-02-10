@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
-import { createClient } from '@/utils/supabase/client'
 import { GENERAL_INSURERS, GENERAL_PRODUCTS } from '../constants'
 
 export default function NewGeneralPolicyPage() {

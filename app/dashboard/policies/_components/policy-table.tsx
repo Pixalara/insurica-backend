@@ -6,7 +6,6 @@ import { toast } from 'sonner'
 import Link from 'next/link'
 import { format } from 'date-fns'
 import type { Policy } from '../types'
-import { Pencil, Trash2 } from 'lucide-react'
 
 interface PolicyTableProps {
     policies: Policy[]

@@ -65,9 +65,6 @@ export function ProductTable({ products }: ProductTableProps) {
                             <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">
                                 Premium Range
                             </th>
-                            <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">
-                                Status
-                            </th>
                             <th className="px-6 py-3 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">
                                 Actions
                             </th>
@@ -102,14 +99,6 @@ export function ProductTable({ products }: ProductTableProps) {
                                     {product.premium_range_min && product.premium_range_max ? (
                                         <span>{formatCurrency(product.premium_range_min)} - {formatCurrency(product.premium_range_max)}</span>
                                     ) : '-'}
-                                </td>
-                                <td className="px-6 py-4">
-                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${product.status === 'Active'
-                                            ? 'bg-green-100 text-green-800'
-                                            : 'bg-gray-100 text-gray-800'
-                                        }`}>
-                                        {product.status}
-                                    </span>
                                 </td>
                                 <td className="px-6 py-4 text-right space-x-2">
                                     <Link
