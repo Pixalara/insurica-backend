@@ -26,6 +26,7 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
     const [pdfFile, setPdfFile] = useState<File | null>(null)
     const [existingPdfUrl, setExistingPdfUrl] = useState(product?.pdf_url || '')
     const [existingPdfName, setExistingPdfName] = useState(product?.pdf_filename || '')
+    const [pdfToDelete, setPdfToDelete] = useState<string | null>(null)
     const [uploading, setUploading] = useState(false)
     const [errors, setErrors] = useState<string[]>([])
 
@@ -54,6 +55,7 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
             setExistingPdfName('')
         }
         setPdfFile(null)
+        setPdfToDelete(null)
         setErrors([])
     }, [product, isOpen])
 
@@ -65,7 +67,7 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
         // Check file type
         const isPdfMime = file.type === 'application/pdf'
         const isPdfExt = file.name.toLowerCase().endsWith('.pdf')
-        
+
         if (!isPdfMime && !isPdfExt) {
             validationErrors.push('Only PDF files are allowed')
         }
@@ -88,7 +90,11 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
 
         if (validationErrors.length === 0) {
             setPdfFile(file)
-            setExistingPdfUrl('') // Clear existing if new one is selected
+            // If there was an existing PDF, mark it for deletion ONLY if we save
+            if (existingPdfUrl) {
+                setPdfToDelete(existingPdfUrl)
+            }
+            setExistingPdfUrl('') // Visual update only
             toast.success(`File selected: ${file.name}`)
         } else {
             setPdfFile(null)
@@ -100,24 +106,8 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
         e.preventDefault()
         e.stopPropagation()
 
-        // If it's an existing PDF in storage, we might want to delete it from storage
-        // However, to keep it safe (in case user cancels), we usually just clear the state
-        // The user specifically asked to delete it from storage tooo.
-        
         if (existingPdfUrl) {
-            // Extract path from URL - assuming standard Supabase URL structure
-            // https://.../storage/v1/object/public/product-pdfs/filename
-            try {
-                const url = new URL(existingPdfUrl)
-                const pathParts = url.pathname.split('/')
-                const filename = pathParts[pathParts.length - 1]
-                
-                if (filename) {
-                    await deleteProductPDF(filename)
-                }
-            } catch (err) {
-                console.error('Error parsing PDF URL:', err)
-            }
+            setPdfToDelete(existingPdfUrl)
         }
 
         setPdfFile(null)
@@ -176,12 +166,30 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
                 premium_range_max: premiumMax ? parseFloat(premiumMax) : undefined,
                 description: description || undefined,
                 features: '',
+                // Use the new URL if uploaded, or the existing one (unless it was cleared)
                 pdf_url: pdfFile ? (pdfUrl || null) : (existingPdfUrl || null),
                 pdf_filename: pdfFile ? (pdfFilename || null) : (existingPdfName || null),
             }
 
+            // Perform DB Update
             if (isEdit && product) {
                 await updateProduct(product.id, formData)
+
+                // NOW it is safe to delete the old PDF if needed
+                if (pdfToDelete) {
+                    try {
+                        const url = new URL(pdfToDelete)
+                        const pathParts = url.pathname.split('/')
+                        const filename = pathParts[pathParts.length - 1]
+                        if (filename) {
+                            await deleteProductPDF(filename)
+                        }
+                    } catch (err) {
+                        console.error('Error deleting old PDF:', err)
+                        // Don't fail the whole operation if cleanup fails
+                    }
+                }
+
                 toast.success('Product updated successfully!', { id: toastId })
             } else {
                 await createProduct(formData)
@@ -197,6 +205,7 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
             setPremiumMax('')
             setDescription('')
             setPdfFile(null)
+            setPdfToDelete(null)
             setErrors([])
 
             onClose()
@@ -366,7 +375,7 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
                                 id="pdf-upload"
                                 required={!isEdit && !pdfFile && !existingPdfUrl}
                             />
-                            
+
                             {(pdfFile || existingPdfUrl) ? (
                                 <div className="flex items-center justify-between bg-slate-50 p-3 rounded-lg border border-slate-200">
                                     <div className="flex items-center gap-3">
@@ -406,7 +415,7 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
                         <button
                             type="submit"
                             disabled={uploading}
-                            className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                            className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700  transition-colors"
                         >
                             {uploading ? (isEdit ? 'Updating...' : 'Uploading...') : (isEdit ? 'Save Changes' : 'Upload Product')}
                         </button>
