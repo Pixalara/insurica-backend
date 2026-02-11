@@ -270,7 +270,7 @@ export function ProductCatalogueClient({
 
             {/* Custom Delete Confirmation Modal */}
             {confirmDeleteId && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4 animate-in fade-in duration-200">
+                <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/50 p-4 animate-in fade-in duration-200">
                     <div className="bg-white rounded-xl shadow-xl max-w-sm w-full p-6 animate-in zoom-in-95 duration-200">
                         <h3 className="text-lg font-bold text-slate-900 mb-2">Delete Product?</h3>
                         <p className="text-slate-500 text-sm mb-6">
