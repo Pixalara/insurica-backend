@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { LifePolicy } from '../types'
 import { X } from 'lucide-react'
+import { DatePicker } from '@/components/ui/date-picker'
 
 interface LifeFormProps {
     initialData?: LifePolicy | null
@@ -52,14 +53,21 @@ export function LifeForm({ initialData, onSubmit, onCancel }: LifeFormProps) {
         }
     })
 
-
-
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target
         setFormData(prev => ({
             ...prev,
             [name]: name === 'sumAssured' || name === 'premiumAmount' ? Number(value) : value
         }))
+    }
+
+    const handleDateChange = (field: keyof Omit<LifePolicy, 'id'>, date: Date | undefined) => {
+        if (date) {
+            setFormData(prev => ({
+                ...prev,
+                [field]: date.toISOString().split('T')[0]
+            }))
+        }
     }
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -214,37 +222,25 @@ export function LifeForm({ initialData, onSubmit, onCancel }: LifeFormProps) {
 
                         <div className="space-y-2">
                             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Start Date</label>
-                            <input
-                                type="date"
-                                name="startDate"
-                                required
-                                value={formData.startDate}
-                                onChange={handleChange}
-                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
+                            <DatePicker
+                                date={formData.startDate ? new Date(formData.startDate) : undefined}
+                                setDate={(date) => handleDateChange('startDate', date)}
                             />
                         </div>
 
                         <div className="space-y-2">
                             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Maturity Date</label>
-                            <input
-                                type="date"
-                                name="maturityDate"
-                                required
-                                value={formData.maturityDate}
-                                onChange={handleChange}
-                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
+                            <DatePicker
+                                date={formData.maturityDate ? new Date(formData.maturityDate) : undefined}
+                                setDate={(date) => handleDateChange('maturityDate', date)}
                             />
                         </div>
 
                         <div className="space-y-2">
                             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Next Due Date</label>
-                            <input
-                                type="date"
-                                name="nextDueDate"
-                                required
-                                value={formData.nextDueDate}
-                                onChange={handleChange}
-                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
+                            <DatePicker
+                                date={formData.nextDueDate ? new Date(formData.nextDueDate) : undefined}
+                                setDate={(date) => handleDateChange('nextDueDate', date)}
                             />
                         </div>
 

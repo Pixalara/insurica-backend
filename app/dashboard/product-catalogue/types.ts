@@ -3,9 +3,6 @@ export interface Product {
   name: string
   category: 'General' | 'Health' | 'Life'
   insurer: string
-  coverage_amount?: number
-  premium_range_min?: number
-  premium_range_max?: number
   features?: string[]
   description?: string
   pdf_url?: string
@@ -19,9 +16,6 @@ export interface ProductFormData {
   name: string
   category: 'General' | 'Health' | 'Life'
   insurer: string
-  coverage_amount?: number
-  premium_range_min?: number
-  premium_range_max?: number
   features?: string
   description?: string
   pdf_url?: string | null

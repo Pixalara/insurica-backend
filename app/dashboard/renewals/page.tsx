@@ -9,15 +9,15 @@ export default async function RenewalsPage({
     searchParams: Promise<{ filter?: string }>
 }) {
     const params = await searchParams
-    const filter = (params.filter || '30') as RenewalFilter
+    const filter = (params.filter || 'this_month') as RenewalFilter
 
     const { renewals, stats } = await getRenewals(filter)
 
     const filterLabels: Record<RenewalFilter, string> = {
-        '30': 'Next 30 Days',
-        '60': 'Next 60 Days',
-        '90': 'Next 90 Days',
-        'overdue': 'Overdue Policies',
+        'this_month': 'Renewals This Month',
+        'next_month': 'Upcoming Next Month',
+        'expired': 'Expired Policies',
+        'lost': 'Lost / Cancelled',
     }
 
     return (
@@ -31,7 +31,22 @@ export default async function RenewalsPage({
 
             <RenewalStats stats={stats} />
 
-            <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+            <div className="flex gap-2 mb-6 overfloaw-x-auto pb-2">
+                {(Object.keys(filterLabels) as RenewalFilter[]).map((key) => (
+                    <a
+                        key={key}
+                        href={`/dashboard/renewals?filter=${key}`}
+                        className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${filter === key
+                                ? 'bg-blue-600 text-white shadow-sm'
+                                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+                            }`}
+                    >
+                        {filterLabels[key]}
+                    </a>
+                ))}
+            </div>
+
+            <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded mb-6">
                 <p className="text-sm font-medium text-blue-800">
                     Showing renewals for: <span className="font-bold">{filterLabels[filter]}</span>
                 </p>

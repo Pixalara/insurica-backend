@@ -19,9 +19,7 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
     const [productName, setProductName] = useState(product?.name || '')
     const [productType, setProductType] = useState<'General' | 'Health' | 'Life' | ''>(product?.category || '')
     const [insurer, setInsurer] = useState(product?.insurer || '')
-    const [coverageAmount, setCoverageAmount] = useState(product?.coverage_amount?.toString() || '')
-    const [premiumMin, setPremiumMin] = useState(product?.premium_range_min?.toString() || '')
-    const [premiumMax, setPremiumMax] = useState(product?.premium_range_max?.toString() || '')
+
     const [description, setDescription] = useState(product?.description || '')
     const [pdfFile, setPdfFile] = useState<File | null>(null)
     const [existingPdfUrl, setExistingPdfUrl] = useState(product?.pdf_url || '')
@@ -36,9 +34,7 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
             setProductName(product.name)
             setProductType(product.category)
             setInsurer(product.insurer)
-            setCoverageAmount(product.coverage_amount?.toString() || '')
-            setPremiumMin(product.premium_range_min?.toString() || '')
-            setPremiumMax(product.premium_range_max?.toString() || '')
+
             setDescription(product.description || '')
             setExistingPdfUrl(product.pdf_url || '')
             setExistingPdfName(product.pdf_filename || '')
@@ -47,9 +43,7 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
             setProductName('')
             setProductType('')
             setInsurer('')
-            setCoverageAmount('')
-            setPremiumMin('')
-            setPremiumMax('')
+
             setDescription('')
             setExistingPdfUrl('')
             setExistingPdfName('')
@@ -161,9 +155,6 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
                 name: productName,
                 category: productType as 'General' | 'Health' | 'Life',
                 insurer,
-                coverage_amount: coverageAmount ? parseFloat(coverageAmount) : undefined,
-                premium_range_min: premiumMin ? parseFloat(premiumMin) : undefined,
-                premium_range_max: premiumMax ? parseFloat(premiumMax) : undefined,
                 description: description || undefined,
                 features: '',
                 // Use the new URL if uploaded, or the existing one (unless it was cleared)
@@ -200,9 +191,7 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
             setProductName('')
             setProductType('')
             setInsurer('')
-            setCoverageAmount('')
-            setPremiumMin('')
-            setPremiumMax('')
+
             setDescription('')
             setPdfFile(null)
             setPdfToDelete(null)
@@ -305,47 +294,6 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
                         </div>
                     </div>
 
-                    {/* Coverage & Premium Range */}
-                    <div className="grid grid-cols-3 gap-4">
-                        <div>
-                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">
-                                Coverage Amount
-                            </label>
-                            <input
-                                type="number"
-                                value={coverageAmount}
-                                onChange={(e) => setCoverageAmount(e.target.value)}
-                                placeholder="e.g., 500000"
-                                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">
-                                Premium Min
-                            </label>
-                            <input
-                                type="number"
-                                value={premiumMin}
-                                onChange={(e) => setPremiumMin(e.target.value)}
-                                placeholder="e.g., 8000"
-                                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">
-                                Premium Max
-                            </label>
-                            <input
-                                type="number"
-                                value={premiumMax}
-                                onChange={(e) => setPremiumMax(e.target.value)}
-                                placeholder="e.g., 15000"
-                                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                        </div>
-                    </div>
 
                     {/* Description */}
                     <div>

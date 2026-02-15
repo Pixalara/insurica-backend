@@ -20,7 +20,7 @@ export default async function LeadsPage({
     status,
     page: currentPage,
   })
-
+  
   const stats = await getLeadMetrics()
 
   return (

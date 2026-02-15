@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { X, Loader2 } from 'lucide-react'
 import { createLead, updateLead } from '../actions'
+import { getCompanies } from '../../clients/actions'
 import { Lead, LeadStatus } from '../types'
 import { toast } from 'sonner'
 import { Label } from '@radix-ui/react-label'
@@ -26,6 +27,7 @@ export function LeadDialog({ isOpen, onClose, leadToEdit }: LeadDialogProps) {
     product_name: '',
     premium_quoted: '' as number | '',
     status: 'Follow Up',
+    company_name: '',
     notes: ''
   })
 
@@ -38,6 +40,7 @@ export function LeadDialog({ isOpen, onClose, leadToEdit }: LeadDialogProps) {
         product_name: leadToEdit.product_name || '',
         premium_quoted: leadToEdit.premium_quoted || '',
         status: leadToEdit.status,
+        company_name: leadToEdit.company_name || '',
         notes: leadToEdit.notes || ''
       })
     } else {
@@ -48,6 +51,7 @@ export function LeadDialog({ isOpen, onClose, leadToEdit }: LeadDialogProps) {
         product_name: '',
         premium_quoted: '',
         status: 'Follow Up',
+        company_name: '',
         notes: ''
       })
     }
@@ -83,9 +87,18 @@ export function LeadDialog({ isOpen, onClose, leadToEdit }: LeadDialogProps) {
     const { name, value } = e.target
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'premium_quoted' ? (value === '' ? '' : Number(value)) : value
+      [name]: name === 'premium_quoted' ? (value === '' ? '' : Number(value)) : (name === 'name' ? value.toUpperCase() : value)
     }))
   }
+
+  const [companies, setCompanies] = useState<{ id: string, name: string }[]>([])
+
+  useEffect(() => {
+    getCompanies().then(data => {
+      // map data to simpler shape if needed
+      setCompanies(data || [])
+    })
+  }, [])
 
   return (
     <Dialog.Root open={isOpen} onOpenChange={onClose}>
@@ -129,7 +142,7 @@ export function LeadDialog({ isOpen, onClose, leadToEdit }: LeadDialogProps) {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-               <div className="space-y-2">
+              <div className="space-y-2">
                 <Label htmlFor="email" className="text-sm font-medium text-slate-700">Email</Label>
                 <input
                   id="email"
@@ -153,6 +166,24 @@ export function LeadDialog({ isOpen, onClose, leadToEdit }: LeadDialogProps) {
                   <option value="Follow Up">Follow Up</option>
                   <option value="Closed">Closed</option>
                   <option value="Lost">Lost</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="company_name" className="text-sm font-medium text-slate-700">Company Name</Label>
+                <select
+                  id="company_name"
+                  name="company_name"
+                  value={formData.company_name}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
+                >
+                  <option value="">Select Company</option>
+                  {companies.map(c => (
+                    <option key={c.id} value={c.name}>{c.name}</option>
+                  ))}
                 </select>
               </div>
             </div>

@@ -5,22 +5,22 @@ import { useSearchParams } from 'next/navigation'
 
 interface RenewalStatsProps {
     stats: {
-        upcoming30: number
-        upcoming60: number
-        upcoming90: number
-        overdue: number
+        this_month: number
+        next_month: number
+        expired: number
+        lost: number
     }
 }
 
 export function RenewalStats({ stats }: RenewalStatsProps) {
     const searchParams = useSearchParams()
-    const activeFilter = searchParams.get('filter') || '30'
+    const activeFilter = searchParams.get('filter') || 'this_month'
 
     const statCards = [
-        { label: 'Next 30 Days', value: stats.upcoming30, filter: '30', color: 'text-red-600' },
-        { label: 'Next 60 Days', value: stats.upcoming60, filter: '60', color: 'text-orange-600' },
-        { label: 'Next 90 Days', value: stats.upcoming90, filter: '90', color: 'text-yellow-600' },
-        { label: 'Overdue', value: stats.overdue, filter: 'overdue', color: 'text-red-700' },
+        { label: 'This Month', value: stats.this_month, filter: 'this_month', color: 'text-blue-600' },
+        { label: 'Next Month', value: stats.next_month, filter: 'next_month', color: 'text-orange-600' },
+        { label: 'Expired', value: stats.expired, filter: 'expired', color: 'text-red-700' },
+        { label: 'Lost / Cancelled', value: stats.lost, filter: 'lost', color: 'text-slate-500' },
     ]
 
     return (
@@ -32,8 +32,8 @@ export function RenewalStats({ stats }: RenewalStatsProps) {
                         key={card.filter}
                         href={`/dashboard/renewals?filter=${card.filter}`}
                         className={`p-5 rounded-xl border-2 transition-all cursor-pointer ${isActive
-                                ? 'bg-blue-50 border-blue-500 shadow-md'
-                                : 'bg-white border-slate-200 hover:border-blue-300 hover:shadow-sm'
+                            ? 'bg-blue-50 border-blue-500 shadow-md'
+                            : 'bg-white border-slate-200 hover:border-blue-300 hover:shadow-sm'
                             }`}
                     >
                         <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">{card.label}</p>

@@ -14,6 +14,8 @@ export interface Policy {
   claim_settled_amount: number | null
   remarks: string | null
   status: 'Active' | 'Expired' | 'Cancelled'
+  product_type?: string | null
+  vehicle_number?: string | null
   created_at: string
   updated_at: string
   // Joined customer data
@@ -37,4 +39,8 @@ export interface PolicyFormData {
   premium?: number
   remarks?: string
   status: 'Active' | 'Expired' | 'Cancelled'
+  
+  // New fields
+  product_type?: string | null
+  vehicle_number?: string | null
 }

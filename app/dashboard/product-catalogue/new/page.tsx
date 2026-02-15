@@ -90,48 +90,6 @@ export default function NewProductPage() {
                     />
                 </div>
 
-                {/* Coverage Amount */}
-                <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                        Coverage Amount (₹)
-                    </label>
-                    <input
-                        type="number"
-                        value={formData.coverage_amount || ''}
-                        onChange={(e) => setFormData({ ...formData, coverage_amount: e.target.value ? Number(e.target.value) : undefined })}
-                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="e.g., 500000"
-                    />
-                </div>
-
-                {/* Premium Range */}
-                <div className="grid grid-cols-2 gap-4">
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">
-                            Premium Min (₹)
-                        </label>
-                        <input
-                            type="number"
-                            value={formData.premium_range_min || ''}
-                            onChange={(e) => setFormData({ ...formData, premium_range_min: e.target.value ? Number(e.target.value) : undefined })}
-                            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="e.g., 5000"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">
-                            Premium Max (₹)
-                        </label>
-                        <input
-                            type="number"
-                            value={formData.premium_range_max || ''}
-                            onChange={(e) => setFormData({ ...formData, premium_range_max: e.target.value ? Number(e.target.value) : undefined })}
-                            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="e.g., 15000"
-                        />
-                    </div>
-                </div>
-
                 {/* Description */}
                 <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">

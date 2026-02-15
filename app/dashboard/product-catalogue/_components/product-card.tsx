@@ -11,18 +11,6 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product, onEdit, onDelete }: ProductCardProps) {
-    // Format currency in Indian style
-    const formatCurrency = (val?: number) => {
-        if (!val) return '-'
-        if (val >= 10000000) return `₹${(val / 10000000).toFixed(1)} Cr`
-        if (val >= 100000) return `₹${(val / 100000).toFixed(1)} L`
-        return new Intl.NumberFormat('en-IN', {
-            style: 'currency',
-            currency: 'INR',
-            maximumFractionDigits: 0
-        }).format(val)
-    }
-
     // Download PDF handler - forces actual file download
     const handleDownload = async () => {
         if (!product.pdf_url) {
@@ -62,10 +50,6 @@ export function ProductCard({ product, onEdit, onDelete }: ProductCardProps) {
     const handleWhatsAppShare = () => {
         // Build message with product details
         let message = `*${product.name}*\nBy ${product.insurer}`
-
-        if (product.coverage_amount) {
-            message += `\nCoverage: ${formatCurrency(product.coverage_amount)}`
-        }
 
         if (product.description) {
             message += `\n\n${product.description}`
@@ -128,25 +112,7 @@ export function ProductCard({ product, onEdit, onDelete }: ProductCardProps) {
 
             {/* Details */}
             <div className="p-5 space-y-3">
-                {/* Coverage */}
-                {product.coverage_amount && (
-                    <div className="flex justify-between items-center">
-                        <span className="text-xs text-slate-400 font-medium uppercase tracking-wide">Coverage</span>
-                        <span className="text-sm font-bold text-slate-900">
-                            {formatCurrency(product.coverage_amount)}
-                        </span>
-                    </div>
-                )}
 
-                {/* Premium Range */}
-                {product.premium_range_min && product.premium_range_max && (
-                    <div className="flex justify-between items-center">
-                        <span className="text-xs text-slate-400 font-medium uppercase tracking-wide">Premium</span>
-                        <span className="text-sm font-semibold text-slate-700">
-                            {formatCurrency(product.premium_range_min)} - {formatCurrency(product.premium_range_max)}
-                        </span>
-                    </div>
-                )}
 
                 {/* Description */}
                 {product.description && (
@@ -163,8 +129,8 @@ export function ProductCard({ product, onEdit, onDelete }: ProductCardProps) {
                     onClick={handleDownload}
                     disabled={!product.pdf_url}
                     className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-semibold text-sm transition-colors ${product.pdf_url
-                            ? 'bg-blue-600 text-white hover:bg-blue-700'
-                            : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                        ? 'bg-blue-600 text-white hover:bg-blue-700'
+                        : 'bg-slate-200 text-slate-400 cursor-not-allowed'
                         }`}
                 >
                     <Download className="w-4 h-4" />

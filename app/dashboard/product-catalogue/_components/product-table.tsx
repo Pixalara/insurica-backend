@@ -59,12 +59,6 @@ export function ProductTable({ products }: ProductTableProps) {
                             <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">
                                 Insurer
                             </th>
-                            <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">
-                                Coverage
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">
-                                Premium Range
-                            </th>
                             <th className="px-6 py-3 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">
                                 Actions
                             </th>
@@ -81,10 +75,10 @@ export function ProductTable({ products }: ProductTableProps) {
                                 </td>
                                 <td className="px-6 py-4">
                                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${product.category === 'Health'
-                                            ? 'bg-green-100 text-green-800'
-                                            : product.category === 'Life'
-                                                ? 'bg-purple-100 text-purple-800'
-                                                : 'bg-blue-100 text-blue-800'
+                                        ? 'bg-green-100 text-green-800'
+                                        : product.category === 'Life'
+                                            ? 'bg-purple-100 text-purple-800'
+                                            : 'bg-blue-100 text-blue-800'
                                         }`}>
                                         {product.category}
                                     </span>
@@ -92,28 +86,23 @@ export function ProductTable({ products }: ProductTableProps) {
                                 <td className="px-6 py-4 text-sm text-slate-900">
                                     {product.insurer}
                                 </td>
-                                <td className="px-6 py-4 text-sm text-slate-900 font-medium">
-                                    {formatCurrency(product.coverage_amount)}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-slate-600">
-                                    {product.premium_range_min && product.premium_range_max ? (
-                                        <span>{formatCurrency(product.premium_range_min)} - {formatCurrency(product.premium_range_max)}</span>
-                                    ) : '-'}
-                                </td>
-                                <td className="px-6 py-4 text-right space-x-2">
-                                    <Link
-                                        href={`/dashboard/product-catalogue/${product.id}/edit`}
-                                        className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                                    >
-                                        Edit
-                                    </Link>
-                                    <button
-                                        onClick={() => handleDelete(product.id, product.name)}
-                                        disabled={deleting === product.id}
-                                        className="text-red-600 hover:text-red-800 text-sm font-medium disabled:opacity-50"
-                                    >
-                                        {deleting === product.id ? 'Deleting...' : 'Delete'}
-                                    </button>
+
+                                <td className="px-6 py-4 text-right whitespace-nowrap">
+                                    <div className="flex justify-end gap-2">
+                                        <Link
+                                            href={`/dashboard/product-catalogue/${product.id}/edit`}
+                                            className="inline-flex items-center justify-center rounded-md text-xs font-medium transition-colors bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 h-8 px-3"
+                                        >
+                                            Edit
+                                        </Link>
+                                        <button
+                                            onClick={() => handleDelete(product.id, product.name)}
+                                            disabled={deleting === product.id}
+                                            className="inline-flex items-center justify-center rounded-md text-xs font-medium transition-colors bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 h-8 px-3 disabled:opacity-50"
+                                        >
+                                            {deleting === product.id ? 'Deleting...' : 'Delete'}
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                         ))}
