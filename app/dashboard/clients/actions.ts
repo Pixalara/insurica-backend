@@ -22,7 +22,7 @@ export async function getCustomers({
 
   let dbQuery = supabase
     .from('customers')
-    .select('*', { count: 'exact' })
+    .select('*, policies(*)', { count: 'exact' })
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1)
 
@@ -307,6 +307,8 @@ export async function createPolicy(formData: {
   premium?: number
   remarks?: string
   status?: 'Active' | 'Expired' | 'Cancelled'
+  product_type?: string | null
+  vehicle_number?: string | null
 }) {
   const supabase = await createSupabaseClient()
 
@@ -323,7 +325,9 @@ export async function createPolicy(formData: {
       end_date: formData.end_date || null,
       premium: formData.premium || null,
       remarks: formData.remarks || null,
-      status: formData.status || 'Active'
+      status: formData.status || 'Active',
+      product_type: formData.product_type || null,
+      vehicle_number: formData.vehicle_number || null
     })
     .select()
     .single()
@@ -349,6 +353,8 @@ export async function updatePolicy(id: string, formData: {
   premium?: number
   remarks?: string
   status?: 'Active' | 'Expired' | 'Cancelled'
+  product_type?: string | null
+  vehicle_number?: string | null
 }) {
   const supabase = await createSupabaseClient()
 
@@ -496,6 +502,8 @@ export async function getClients(params: {
     start_date: p.start_date,
     end_date: p.end_date,
     status: p.status,
+    product_type: p.product_type,
+    vehicle_number: p.vehicle_number,
     created_at: p.created_at,
     companies: [{ name: p.insurance_company }]
   }))
@@ -542,6 +550,8 @@ export async function getClient(id: string) {
     start_date: data.start_date,
     end_date: data.end_date,
     status: data.status,
+    product_type: data.product_type,
+    vehicle_number: data.vehicle_number,
     remarks: data.remarks,
     created_at: data.created_at,
     // Customer data for forms
@@ -566,6 +576,8 @@ export async function createClient(formData: {
   notes?: string
   remarks?: string
   status?: string
+  product_type?: string | null
+  vehicle_number?: string | null
 }) {
   const supabase = await createSupabaseClient()
   
@@ -627,7 +639,9 @@ export async function createClient(formData: {
       end_date: formData.end_date || null,
       premium: formData.premium_amount ? parseFloat(formData.premium_amount.toString()) : null,
       remarks: formData.notes || formData.remarks || null,
-      status: formData.status || 'Active'
+      status: formData.status || 'Active',
+      product_type: formData.product_type || null,
+      vehicle_number: formData.vehicle_number || null
     })
 
   if (policyError) {
@@ -656,6 +670,8 @@ export async function updateClient(id: string, formData: {
   notes?: string
   remarks?: string
   status?: string
+  product_type?: string | null
+  vehicle_number?: string | null
 }) {
   const supabase = await createSupabaseClient()
 
@@ -693,6 +709,8 @@ export async function updateClient(id: string, formData: {
       premium: formData.premium_amount ? parseFloat(formData.premium_amount.toString()) : null,
       remarks: formData.notes || formData.remarks || null,
       status: formData.status || 'Active',
+      product_type: formData.product_type || null,
+      vehicle_number: formData.vehicle_number || null,
       updated_at: new Date().toISOString()
     })
     .eq('policy_id', id)

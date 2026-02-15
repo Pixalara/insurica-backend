@@ -25,6 +25,8 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
   const [name, setName] = useState('')
   const [policyNumber, setPolicyNumber] = useState('')
   const [category, setCategory] = useState<typeof CATEGORIES[number] | ''>('')
+  const [productType, setProductType] = useState('')
+  const [vehicleNumber, setVehicleNumber] = useState('')
 
   // Dependent on Category
   const [companies, setCompanies] = useState<Company[]>([])
@@ -62,6 +64,8 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
         setEmail(client.email || '')
         setPhone(client.phone || '')
         setCategory(client.category)
+        setProductType(client.product_type || '')
+        setVehicleNumber(client.vehicle_number || '')
         setInsuranceCompany(client.insurance_company || '')
         // Try to match company by name if companies are loaded
         setSelectedCompanyId('')
@@ -166,7 +170,9 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
         end_date: endDate,
         policy_duration: policyDuration,
         notes: notes,
-        status
+        status,
+        product_type: category === 'General' ? productType : null,
+        vehicle_number: (category === 'General' && productType === 'Vehicle Insurance') ? vehicleNumber : null
       }
 
       await updateClient(id, formData)
@@ -269,6 +275,38 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
                 ))}
               </select>
             </div>
+
+            {/* Dynamic Product Type for General Insurance */}
+            {category === 'General' && (
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Product Type <span className="text-red-500">*</span></label>
+                <select
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium appearance-none"
+                  value={productType}
+                  onChange={(e) => setProductType(e.target.value)}
+                >
+                  <option value="">Select Type</option>
+                  <option value="Vehicle Insurance">Vehicle Insurance</option>
+                  <option value="Fire Insurance">Fire Insurance</option>
+                  <option value="Cyber Insurance">Cyber Insurance</option>
+                  <option value="Travel Insurance">Travel Insurance</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+            )}
+
+            {/* Dynamic Vehicle Number */}
+            {category === 'General' && productType === 'Vehicle Insurance' && (
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Vehicle Number <span className="text-red-500">*</span></label>
+                <input
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
+                  value={vehicleNumber}
+                  onChange={(e) => setVehicleNumber(e.target.value)}
+                  placeholder="e.g. MH 02 AB 1234"
+                />
+              </div>
+            )}
 
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Insurer Name <span className="text-red-500">*</span></label>

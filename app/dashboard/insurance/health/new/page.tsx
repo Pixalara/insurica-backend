@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
+import { DatePicker } from '@/components/ui/date-picker'
 
 export default function NewHealthPolicyPage() {
     const router = useRouter()
@@ -29,6 +30,13 @@ export default function NewHealthPolicyPage() {
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value })
+    }
+
+    const handleDateChange = (field: string, date: Date | undefined) => {
+        setFormData(prev => ({
+            ...prev,
+            [field]: date ? date.toISOString().split('T')[0] : ''
+        }))
     }
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -174,24 +182,16 @@ export default function NewHealthPolicyPage() {
                         </div>
                         <div>
                             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Start Date</label>
-                            <input
-                                required
-                                type="date"
-                                name="startDate"
-                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
-                                value={formData.startDate}
-                                onChange={handleChange}
+                            <DatePicker
+                                date={formData.startDate ? new Date(formData.startDate) : undefined}
+                                setDate={(date) => handleDateChange('startDate', date)}
                             />
                         </div>
                         <div>
                             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">End / Renewal Date</label>
-                            <input
-                                required
-                                type="date"
-                                name="endDate"
-                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
-                                value={formData.endDate}
-                                onChange={handleChange}
+                            <DatePicker
+                                date={formData.endDate ? new Date(formData.endDate) : undefined}
+                                setDate={(date) => handleDateChange('endDate', date)}
                             />
                         </div>
                     </div>

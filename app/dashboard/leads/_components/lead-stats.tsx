@@ -17,7 +17,7 @@ export function LeadStats({ stats }: LeadStatsProps) {
             trend: "All time records"
         },
         {
-            label: `New Leads (${new Date().toLocaleString('default', { month: 'long' })})`,
+            label: "New Leads",
             value: stats.newLeadsThisMonth,
             icon: UserPlus,
             color: "text-green-600",

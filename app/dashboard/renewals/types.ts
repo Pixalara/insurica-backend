@@ -18,4 +18,4 @@ export interface Renewal {
   }
 }
 
-export type RenewalFilter = '30' | '60' | '90' | 'overdue'
+export type RenewalFilter = 'this_month' | 'next_month' | 'expired' | 'lost'

@@ -28,6 +28,8 @@ export type Policy = {
   claim_settled_amount: number | null
   remarks: string | null
   status: 'Active' | 'Expired' | 'Cancelled'
+  product_type?: string | null
+  vehicle_number?: string | null
   created_at: string
   updated_at: string
   // Joined customer data
@@ -61,6 +63,8 @@ export type Client = {
   start_date: string | null
   end_date: string | null
   status: 'Active' | 'Expired' | 'Cancelled'
+  product_type?: string | null
+  vehicle_number?: string | null
   created_at: string
   remarks?: string | null
   companies?: { name: string }[]

@@ -10,6 +10,7 @@ export interface Lead {
   premium_quoted: number | null;
   status: LeadStatus;
   notes: string | null;
+  company_name: string | null;
   created_at: string;
   updated_at: string;
 }

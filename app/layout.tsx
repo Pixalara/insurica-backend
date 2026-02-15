@@ -49,7 +49,7 @@ export default function RootLayout({
       <body className={`${geistSans.variable} antialiased bg-gray-100`} suppressHydrationWarning>
         <ServiceWorkerRegistration />
         {children}
-        <Toaster position="top-center" richColors />
+        <Toaster position="top-center" richColors duration={3000} />
       </body>
     </html>
   );

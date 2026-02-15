@@ -14,3 +14,168 @@ body {
   color: var(--background);
   scroll-behavior: smooth;
 }
+
+/* ===== React DayPicker v9 — Premium Calendar Overrides ===== */
+.rdp-calendar-custom.rdp-root {
+  --rdp-accent-color: #2563eb;
+  --rdp-accent-background-color: #eff6ff;
+  --rdp-today-color: #2563eb;
+  --rdp-day-height: 40px;
+  --rdp-day-width: 40px;
+  --rdp-day_button-height: 36px;
+  --rdp-day_button-width: 36px;
+  --rdp-day_button-border-radius: 8px;
+  --rdp-day_button-border: 2px solid transparent;
+  --rdp-selected-border: 2px solid #2563eb;
+  --rdp-outside-opacity: 0.4;
+  --rdp-nav_button-height: 32px;
+  --rdp-nav_button-width: 32px;
+  --rdp-nav-height: 44px;
+  font-family: inherit;
+}
+
+/* Month caption */
+.rdp-calendar-custom .rdp-month_caption {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1e293b;
+  height: 44px;
+  align-items: center;
+}
+
+/* Dropdown selects — make them visible and styled */
+.rdp-calendar-custom .rdp-dropdown_root {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.rdp-calendar-custom .rdp-dropdown {
+  opacity: 1;
+  position: relative;
+  inset: unset;
+  width: auto;
+  appearance: auto;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 4px 8px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.rdp-calendar-custom .rdp-dropdown:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.rdp-calendar-custom .rdp-dropdown:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* Hide the default caption label when dropdowns are visible */
+.rdp-calendar-custom .rdp-caption_label {
+  display: none;
+}
+
+/* Dropdowns container */
+.rdp-calendar-custom .rdp-dropdowns {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Nav buttons */
+.rdp-calendar-custom .rdp-button_previous,
+.rdp-calendar-custom .rdp-button_next {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #475569;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: all 0.15s ease;
+}
+
+.rdp-calendar-custom .rdp-button_previous:hover,
+.rdp-calendar-custom .rdp-button_next:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+/* Chevron icons */
+.rdp-calendar-custom .rdp-chevron {
+  fill: #64748b;
+  width: 16px;
+  height: 16px;
+}
+
+/* Weekday headers */
+.rdp-calendar-custom .rdp-weekday {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 8px 0;
+  opacity: 1;
+}
+
+/* Day button */
+.rdp-calendar-custom .rdp-day_button {
+  border-radius: 8px;
+  font-weight: 500;
+  color: #334155;
+  transition: all 0.15s ease;
+}
+
+.rdp-calendar-custom .rdp-day_button:hover {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+/* Today */
+.rdp-calendar-custom .rdp-today:not(.rdp-outside) {
+  color: #2563eb;
+  font-weight: 700;
+}
+
+.rdp-calendar-custom .rdp-today .rdp-day_button {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+/* Selected day */
+.rdp-calendar-custom .rdp-selected {
+  font-size: inherit;
+  font-weight: 600;
+}
+
+.rdp-calendar-custom .rdp-selected .rdp-day_button {
+  background: #2563eb;
+  color: #ffffff;
+  border-color: #2563eb;
+}
+
+.rdp-calendar-custom .rdp-selected .rdp-day_button:hover {
+  background: #1d4ed8;
+  color: #ffffff;
+}
+
+/* Outside days */
+.rdp-calendar-custom .rdp-outside .rdp-day_button {
+  color: #cbd5e1;
+}
+
+/* Disabled */
+.rdp-calendar-custom .rdp-disabled .rdp-day_button {
+  color: #e2e8f0;
+  cursor: not-allowed;
+}

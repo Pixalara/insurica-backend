@@ -105,10 +105,13 @@ export function RenewalTable({ renewals }: RenewalTableProps) {
                                         Renew
                                     </Link>
                                     <a
-                                        href={renewal.customer?.email ? `mailto:${renewal.customer.email}` : '#'}
-                                        className={`text-green-600 hover:text-green-800 text-sm font-medium ${!renewal.customer?.email && 'opacity-50 cursor-not-allowed'}`}
+                                        href={renewal.customer?.mobile_number ? `https://wa.me/${renewal.customer.mobile_number.replace(/\D/g, '')}?text=Dear ${renewal.customer.full_name}, your ${renewal.policy_type} policy (${renewal.policy_number}) is due for renewal.` : '#'}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className={`inline-flex items-center gap-1 text-green-600 hover:text-green-800 text-sm font-medium ${!renewal.customer?.mobile_number && 'opacity-50 cursor-not-allowed'}`}
                                     >
-                                        Contact
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-message-circle"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" /></svg>
+                                        WhatsApp
                                     </a>
                                 </td>
                             </tr>

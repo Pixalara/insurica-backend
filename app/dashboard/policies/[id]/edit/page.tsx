@@ -5,6 +5,8 @@ import { getClient, updateClient, getCompanies } from '../../../clients/actions'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
+import { DatePicker } from '@/components/ui/date-picker'
+import { format } from 'date-fns'
 import { toast } from 'sonner'
 
 const CATEGORIES = ['General', 'Health', 'Life'] as const
@@ -25,7 +27,9 @@ export default function EditPolicyPage({ params }: { params: Promise<{ id: strin
   const [name, setName] = useState('')
   const [policyNumber, setPolicyNumber] = useState('')
   const [category, setCategory] = useState<typeof CATEGORIES[number] | ''>('')
-  
+  const [productType, setProductType] = useState('')
+  const [vehicleNumber, setVehicleNumber] = useState('')
+
   // Dependent on Category
   const [companies, setCompanies] = useState<Company[]>([])
   const [selectedCompanyId, setSelectedCompanyId] = useState('')
@@ -37,8 +41,8 @@ export default function EditPolicyPage({ params }: { params: Promise<{ id: strin
   const [productName, setProductName] = useState('')
   const [sumInsured, setSumInsured] = useState('')
   const [premiumAmount, setPremiumAmount] = useState('')
-  const [startDate, setStartDate] = useState('')
-  const [endDate, setEndDate] = useState('')
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined)
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined)
   const [notes, setNotes] = useState('')
   const [status, setStatus] = useState('Active')
 
@@ -59,12 +63,14 @@ export default function EditPolicyPage({ params }: { params: Promise<{ id: strin
         setEmail(client.email || '')
         setPhone(client.phone || '')
         setCategory(client.category)
+        setProductType(client.product_type || '')
+        setVehicleNumber(client.vehicle_number || '')
         setInsuranceCompany(client.insurance_company || '')
         setProductName(client.product_name || '')
         setSumInsured(client.sum_insured?.toString() || '')
         setPremiumAmount(client.premium_amount?.toString() || '')
-        setStartDate(client.start_date || '')
-        setEndDate(client.end_date || '')
+        setStartDate(client.start_date ? new Date(client.start_date) : undefined)
+        setEndDate(client.end_date ? new Date(client.end_date) : undefined)
         setNotes(client.remarks || '')
         setStatus(client.status || 'Active')
 
@@ -90,10 +96,10 @@ export default function EditPolicyPage({ params }: { params: Promise<{ id: strin
 
       try {
         const data = await getCompanies(category)
-        setCompanies(data as Company[]) 
-        
+        setCompanies(data as Company[])
+
         if (insuranceCompany && data) {
-          const match = (data as Company[]).find(c => 
+          const match = (data as Company[]).find(c =>
             c.name.toLowerCase() === insuranceCompany.toLowerCase()
           )
           if (match) {
@@ -101,7 +107,7 @@ export default function EditPolicyPage({ params }: { params: Promise<{ id: strin
           }
         }
       } catch (err) {
-         console.error('Failed to fetch companies', err)
+        console.error('Failed to fetch companies', err)
       }
     }
 
@@ -132,7 +138,7 @@ export default function EditPolicyPage({ params }: { params: Promise<{ id: strin
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!category) {
       toast.error('Please select a Policy Category')
       return
@@ -161,6 +167,8 @@ export default function EditPolicyPage({ params }: { params: Promise<{ id: strin
         policy_duration: string;
         notes: string;
         status: string;
+        product_type: string | null;
+        vehicle_number: string | null;
       } = {
         name,
         email: email || null,
@@ -171,11 +179,13 @@ export default function EditPolicyPage({ params }: { params: Promise<{ id: strin
         product_name: productName || null,
         sum_insured: sumInsured,
         premium_amount: premiumAmount,
-        start_date: startDate,
-        end_date: endDate,
+        start_date: startDate ? format(startDate, 'yyyy-MM-dd') : '',
+        end_date: endDate ? format(endDate, 'yyyy-MM-dd') : '',
         policy_duration: policyDuration,
         notes: notes,
-        status
+        status,
+        product_type: category === 'General' ? productType : null,
+        vehicle_number: (category === 'General' && productType === 'Vehicle Insurance') ? vehicleNumber : null
       }
 
       await updateClient(id, formData)
@@ -279,6 +289,38 @@ export default function EditPolicyPage({ params }: { params: Promise<{ id: strin
               </select>
             </div>
 
+            {/* Dynamic Product Type for General Insurance */}
+            {category === 'General' && (
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Product Type <span className="text-red-500">*</span></label>
+                <select
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium appearance-none"
+                  value={productType}
+                  onChange={(e) => setProductType(e.target.value)}
+                >
+                  <option value="">Select Type</option>
+                  <option value="Vehicle Insurance">Vehicle Insurance</option>
+                  <option value="Fire Insurance">Fire Insurance</option>
+                  <option value="Cyber Insurance">Cyber Insurance</option>
+                  <option value="Travel Insurance">Travel Insurance</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+            )}
+
+            {/* Dynamic Vehicle Number */}
+            {category === 'General' && productType === 'Vehicle Insurance' && (
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Vehicle Number <span className="text-red-500">*</span></label>
+                <input
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
+                  value={vehicleNumber}
+                  onChange={(e) => setVehicleNumber(e.target.value)}
+                  placeholder="e.g. MH 02 AB 1234"
+                />
+              </div>
+            )}
+
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Insurer Name <span className="text-red-500">*</span></label>
               <select
@@ -298,8 +340,8 @@ export default function EditPolicyPage({ params }: { params: Promise<{ id: strin
             </div>
 
             <div>
-               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Policy Number <span className="text-red-500">*</span></label>
-               <input
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Policy Number <span className="text-red-500">*</span></label>
+              <input
                 required
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
                 value={policyNumber}
@@ -308,7 +350,7 @@ export default function EditPolicyPage({ params }: { params: Promise<{ id: strin
               />
             </div>
 
-             <div>
+            <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Product Opted </label>
               <input
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
@@ -318,7 +360,7 @@ export default function EditPolicyPage({ params }: { params: Promise<{ id: strin
               />
             </div>
 
-             <div>
+            <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Sum Insured</label>
               <input
                 type="number"
@@ -328,7 +370,7 @@ export default function EditPolicyPage({ params }: { params: Promise<{ id: strin
                 placeholder="e.g. 500000"
               />
             </div>
-             <div>
+            <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Premium Collected (incl. taxes)</label>
               <input
                 type="number"
@@ -340,22 +382,18 @@ export default function EditPolicyPage({ params }: { params: Promise<{ id: strin
             </div>
 
             <div>
-               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Policy Start Date</label>
-               <input
-                type="date"
-                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-               />
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Policy Start Date</label>
+              <DatePicker
+                date={startDate}
+                setDate={setStartDate}
+              />
             </div>
             <div>
-               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Policy End Date</label>
-               <input
-                type="date"
-                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-               />
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Policy End Date</label>
+              <DatePicker
+                date={endDate}
+                setDate={setEndDate}
+              />
             </div>
 
             <div>
@@ -368,7 +406,7 @@ export default function EditPolicyPage({ params }: { params: Promise<{ id: strin
                 placeholder="Auto-calculated"
               />
             </div>
-             <div>
+            <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Policy Status</label>
               <select
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium appearance-none"
@@ -380,7 +418,7 @@ export default function EditPolicyPage({ params }: { params: Promise<{ id: strin
                 <option value="Expired">Expired</option>
               </select>
             </div>
-            
+
             <div className="md:col-span-2">
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Notes</label>
               <textarea

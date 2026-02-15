@@ -2,8 +2,8 @@ import Link from 'next/link'
 import { ClientStats } from './_components/client-stats'
 import { ClientTable } from './_components/client-table'
 import { ClientFilters } from './_components/client-filters'
-import { getClients, getClientMetrics } from './actions'
-import { Client } from './types'
+import { getCustomers, getClientMetrics } from './actions'
+import { Customer } from './types'
 
 export default async function ClientsPage({
   searchParams,
@@ -16,10 +16,8 @@ export default async function ClientsPage({
   const product = params.product || 'All'
   const currentPage = Number(params.page) || 1
 
-  const { clients, totalCount } = await getClients({
+  const { customers, totalCount } = await getCustomers({
     query,
-    status,
-    product,
     page: currentPage,
   })
 
@@ -46,10 +44,10 @@ export default async function ClientsPage({
 
       <ClientFilters />
 
-      <ClientTable clients={clients as Client[]} />
+      <ClientTable customers={customers as Customer[]} />
 
       <div className="text-center text-xs text-slate-400 mt-4">
-        Showing {clients.length} of {totalCount} clients
+        Showing {customers.length} of {totalCount} clients
       </div>
     </div>
   )

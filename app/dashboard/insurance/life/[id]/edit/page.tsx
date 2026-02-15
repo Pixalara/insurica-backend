@@ -4,6 +4,8 @@ import { useState, useEffect, use } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Trash2, Edit2, Save, X } from 'lucide-react'
+import { DatePicker } from '@/components/ui/date-picker'
+import { format } from 'date-fns'
 import { getClient, updateClient, deleteClient, getCompanies } from '../../../../clients/actions'
 import { toast } from 'sonner'
 
@@ -24,8 +26,8 @@ export default function EditLifePolicyPage({ params }: { params: Promise<{ id: s
         companyId: '',
         productName: '',
         policyNumber: '',
-        startDate: '',
-        endDate: '',
+        startDate: undefined as Date | undefined,
+        endDate: undefined as Date | undefined,
         premium: '',
         sumInsured: '',
         status: 'Active',
@@ -51,8 +53,8 @@ export default function EditLifePolicyPage({ params }: { params: Promise<{ id: s
                         companyId: client.insurance_company || '',
                         productName: client.product_name || '',
                         policyNumber: client.policy_number,
-                        startDate: client.start_date || '',
-                        endDate: client.end_date || '',
+                        startDate: client.start_date ? new Date(client.start_date) : undefined,
+                        endDate: client.end_date ? new Date(client.end_date) : undefined,
                         premium: client.premium_amount?.toString() || '',
                         sumInsured: client.sum_insured?.toString() || '',
                         status: client.status || 'Active',
@@ -90,7 +92,7 @@ export default function EditLifePolicyPage({ params }: { params: Promise<{ id: s
                 }
             }
         } else {
-             setDuration('')
+            setDuration('')
         }
     }, [formData.startDate, formData.endDate])
 
@@ -98,10 +100,14 @@ export default function EditLifePolicyPage({ params }: { params: Promise<{ id: s
         setFormData({ ...formData, [e.target.name]: e.target.value })
     }
 
+    const handleDateChange = (field: 'startDate' | 'endDate', date: Date | undefined) => {
+        setFormData(prev => ({ ...prev, [field]: date }))
+    }
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setSaving(true)
-        
+
         try {
             const updateData = {
                 name: formData.holderName,
@@ -113,8 +119,8 @@ export default function EditLifePolicyPage({ params }: { params: Promise<{ id: s
                 product_name: formData.productName,
                 sum_insured: formData.sumInsured,
                 premium_amount: formData.premium,
-                start_date: formData.startDate,
-                end_date: formData.endDate,
+                start_date: formData.startDate ? format(formData.startDate, 'yyyy-MM-dd') : null,
+                end_date: formData.endDate ? format(formData.endDate, 'yyyy-MM-dd') : null,
                 policy_duration: duration,
                 notes: formData.notes,
                 status: formData.status
@@ -125,8 +131,8 @@ export default function EditLifePolicyPage({ params }: { params: Promise<{ id: s
             setIsEditing(false)
             router.refresh()
         } catch (error) {
-           console.error('Error updating policy:', error)
-           toast.error('Failed to update policy')
+            console.error('Error updating policy:', error)
+            toast.error('Failed to update policy')
         } finally {
             setSaving(false)
         }
@@ -134,15 +140,15 @@ export default function EditLifePolicyPage({ params }: { params: Promise<{ id: s
 
     const handleDelete = async () => {
         try {
-             await deleteClient(id)
-             toast.success('Policy deleted successfully')
-             router.push('/dashboard/insurance/life')
+            await deleteClient(id)
+            toast.success('Policy deleted successfully')
+            router.push('/dashboard/insurance/life')
         } catch (error) {
             console.error('Error deleting policy:', error)
             toast.error('Failed to delete policy')
         }
     }
-    
+
 
     const getCompanyName = (id: string) => {
         return companies.find(c => c.id === id)?.name || ''
@@ -254,7 +260,7 @@ export default function EditLifePolicyPage({ params }: { params: Promise<{ id: s
 
                         <div className="md:col-span-1">
                             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Product Opted</label>
-                             <input
+                            <input
                                 required
                                 name="productName"
                                 disabled={!isEditing}
@@ -278,26 +284,18 @@ export default function EditLifePolicyPage({ params }: { params: Promise<{ id: s
 
                         <div>
                             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Policy Start Date</label>
-                            <input
-                                required
-                                type="date"
-                                name="startDate"
+                            <DatePicker
+                                date={formData.startDate}
+                                setDate={(date) => handleDateChange('startDate', date)}
                                 disabled={!isEditing}
-                                className={`w-full border rounded-xl px-4 py-3.5 transition-all font-medium ${isEditing ? 'bg-slate-50 border-slate-200 text-slate-700 focus:ring-2 focus:ring-blue-500/20' : 'bg-transparent border-transparent px-0 text-slate-900'}`}
-                                value={formData.startDate}
-                                onChange={handleChange}
                             />
                         </div>
                         <div>
                             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Policy End Date</label>
-                            <input
-                                required
-                                type="date"
-                                name="endDate"
+                            <DatePicker
+                                date={formData.endDate}
+                                setDate={(date) => handleDateChange('endDate', date)}
                                 disabled={!isEditing}
-                                className={`w-full border rounded-xl px-4 py-3.5 transition-all font-medium ${isEditing ? 'bg-slate-50 border-slate-200 text-slate-700 focus:ring-2 focus:ring-blue-500/20' : 'bg-transparent border-transparent px-0 text-slate-900'}`}
-                                value={formData.endDate}
-                                onChange={handleChange}
                             />
                         </div>
                         <div>

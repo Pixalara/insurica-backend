@@ -4,43 +4,33 @@ import { createClient } from '@/utils/supabase/server'
 import { differenceInDays } from 'date-fns'
 import type { Renewal, RenewalFilter } from './types'
 
-export async function getRenewals(filter: RenewalFilter = '30') {
+export async function getRenewals(filter: RenewalFilter = 'this_month') {
   const supabase = await createClient()
   const now = new Date()
-
-  // Fetch all active policies with customer data
+  
+  // NOTE: For "Lost", we might need to check 'Cancelled' status or 'Expired' > 90 days.
+  // For now, we will fetch 'Active' and 'Expired' and 'Cancelled' to handle all.
   const { data, error } = await supabase
     .from('policies')
     .select(`
       *,
       customer:customers(full_name, mobile_number, email)
     `)
-    .eq('status', 'Active')
     .order('end_date', { ascending: true })
 
   if (error) {
     console.error('Error fetching renewals:', error)
-    return { renewals: [], stats: { upcoming30: 0, upcoming60: 0, upcoming90: 0, overdue: 0 } }
+    return { renewals: [], stats: { this_month: 0, next_month: 0, expired: 0, lost: 0 } }
   }
 
-  // Calculate days to expiry and filter
   const renewalsWithDays = (data || []).map((policy) => {
     const endDate = new Date(policy.end_date)
     const daysToExpiry = differenceInDays(endDate, now)
     return {
-      policy_id: policy.policy_id,
-      customer_id: policy.customer_id,
-      policy_number: policy.policy_number,
-      product: policy.product,
-      insurance_company: policy.insurance_company,
-      policy_type: policy.policy_type,
-      premium: policy.premium,
-      start_date: policy.start_date,
-      end_date: policy.end_date,
-      status: policy.status,
+      ...policy,
       days_to_expiry: daysToExpiry,
       customer: policy.customer,
-      // Legacy fields for backward compatibility
+      // Legacy fields
       name: policy.customer?.full_name || 'Unknown',
       email: policy.customer?.email || '',
       phone: policy.customer?.mobile_number || '',
@@ -51,28 +41,34 @@ export async function getRenewals(filter: RenewalFilter = '30') {
   })
 
   // Calculate stats
+  // "This Month": Active/Expired policies expiring within next 30 days (or overdue by small amount?)
+  // Let's define:
+  // This Month: 0 to 30 days
+  // Next Month: 31 to 60 days
+  // Expired: < 0 days (and Status not Cancelled)
+  // Lost: Status = Cancelled OR Expired > 90 days? Let's stick to Status=Cancelled for now.
+  
   const stats = {
-    upcoming30: renewalsWithDays.filter(r => r.days_to_expiry >= 0 && r.days_to_expiry <= 30).length,
-    upcoming60: renewalsWithDays.filter(r => r.days_to_expiry >= 0 && r.days_to_expiry <= 60).length,
-    upcoming90: renewalsWithDays.filter(r => r.days_to_expiry >= 0 && r.days_to_expiry <= 90).length,
-    overdue: renewalsWithDays.filter(r => r.days_to_expiry < 0).length,
+    this_month: renewalsWithDays.filter(r => r.status !== 'Cancelled' && r.days_to_expiry >= 0 && r.days_to_expiry <= 30).length,
+    next_month: renewalsWithDays.filter(r => r.status !== 'Cancelled' && r.days_to_expiry > 30 && r.days_to_expiry <= 60).length,
+    expired: renewalsWithDays.filter(r => r.status === 'Expired' || (r.status === 'Active' && r.days_to_expiry < 0)).length,
+    lost: renewalsWithDays.filter(r => r.status === 'Cancelled').length,
   }
 
-  // Apply filter
   let filteredRenewals: typeof renewalsWithDays = []
-  
+
   switch (filter) {
-    case '30':
-      filteredRenewals = renewalsWithDays.filter(r => r.days_to_expiry >= 0 && r.days_to_expiry <= 30)
+    case 'this_month':
+      filteredRenewals = renewalsWithDays.filter(r => r.status !== 'Cancelled' && r.days_to_expiry >= 0 && r.days_to_expiry <= 30)
       break
-    case '60':
-      filteredRenewals = renewalsWithDays.filter(r => r.days_to_expiry >= 0 && r.days_to_expiry <= 60)
+    case 'next_month':
+      filteredRenewals = renewalsWithDays.filter(r => r.status !== 'Cancelled' && r.days_to_expiry > 30 && r.days_to_expiry <= 60)
       break
-    case '90':
-      filteredRenewals = renewalsWithDays.filter(r => r.days_to_expiry >= 0 && r.days_to_expiry <= 90)
+    case 'expired':
+      filteredRenewals = renewalsWithDays.filter(r => r.status === 'Expired' || (r.status === 'Active' && r.days_to_expiry < 0))
       break
-    case 'overdue':
-      filteredRenewals = renewalsWithDays.filter(r => r.days_to_expiry < 0)
+    case 'lost':
+      filteredRenewals = renewalsWithDays.filter(r => r.status === 'Cancelled')
       break
     default:
       filteredRenewals = renewalsWithDays.filter(r => r.days_to_expiry >= 0 && r.days_to_expiry <= 30)

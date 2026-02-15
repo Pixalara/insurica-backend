@@ -98,6 +98,7 @@ export function LeadsTable({ leads }: LeadsTableProps) {
                                     </td>
                                     <td className="px-4 py-4">
                                         <div className="text-sm text-slate-700 font-medium">{lead.product_name || 'N/A'}</div>
+                                        <div className="text-xs text-slate-500">{lead.company_name}</div>
                                     </td>
                                     <td className="px-4 py-4">
                                         <div className="text-sm text-slate-700 font-medium">

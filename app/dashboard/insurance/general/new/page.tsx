@@ -2,9 +2,11 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { GENERAL_INSURERS, GENERAL_PRODUCTS } from '../constants'
+import { DatePicker } from '@/components/ui/date-picker'
+import { format } from 'date-fns'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
-import { GENERAL_INSURERS, GENERAL_PRODUCTS } from '../constants'
 
 export default function NewGeneralPolicyPage() {
     const router = useRouter()
@@ -17,8 +19,8 @@ export default function NewGeneralPolicyPage() {
         insurer: '',
         product: '',
         policyNumber: '',
-        startDate: '',
-        endDate: '',
+        startDate: undefined as Date | undefined,
+        endDate: undefined as Date | undefined,
         premium: '',
         sumInsured: '',
         status: 'Active',
@@ -51,13 +53,25 @@ export default function NewGeneralPolicyPage() {
         setFormData({ ...formData, [e.target.name]: e.target.value })
     }
 
+    const handleDateChange = (field: 'startDate' | 'endDate', date: Date | undefined) => {
+        setFormData(prev => ({
+            ...prev,
+            [field]: date
+        }))
+    }
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setLoading(true)
 
         // TODO: Integrate with actual Supabase table 'policies' when ready
         // For now we simulate an API call
-        console.log('Submitting Policy:', { ...formData, duration })
+        console.log('Submitting Policy:', {
+            ...formData,
+            startDate: formData.startDate ? format(formData.startDate, 'yyyy-MM-dd') : '',
+            endDate: formData.endDate ? format(formData.endDate, 'yyyy-MM-dd') : '',
+            duration
+        })
 
         // Simulate delay
         await new Promise(resolve => setTimeout(resolve, 1000))
@@ -168,24 +182,16 @@ export default function NewGeneralPolicyPage() {
 
                         <div>
                             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Policy Start Date</label>
-                            <input
-                                required
-                                type="date"
-                                name="startDate"
-                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
-                                value={formData.startDate}
-                                onChange={handleChange}
+                            <DatePicker
+                                date={formData.startDate}
+                                setDate={(date) => handleDateChange('startDate', date)}
                             />
                         </div>
                         <div>
                             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Policy End Date</label>
-                            <input
-                                required
-                                type="date"
-                                name="endDate"
-                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
-                                value={formData.endDate}
-                                onChange={handleChange}
+                            <DatePicker
+                                date={formData.endDate}
+                                setDate={(date) => handleDateChange('endDate', date)}
                             />
                         </div>
                         <div>

@@ -7,6 +7,8 @@ import Link from 'next/link'
 import { ArrowLeft, Lock, CheckCircle2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { CustomerSearch } from '../../clients/_components/customer-search'
+import { DatePicker } from '@/components/ui/date-picker'
+import { format } from 'date-fns'
 
 const CATEGORIES = ['General', 'Health', 'Life'] as const
 
@@ -32,13 +34,15 @@ export default function NewPolicyPage() {
   // Dependent on Category
   const [companies, setCompanies] = useState<Company[]>([])
   const [selectedCompanyId, setSelectedCompanyId] = useState('')
+  const [productType, setProductType] = useState('')
+  const [vehicleNumber, setVehicleNumber] = useState('')
 
   // Other Fields
   const [productName, setProductName] = useState('')
   const [sumInsured, setSumInsured] = useState('')
   const [premiumAmount, setPremiumAmount] = useState('')
-  const [startDate, setStartDate] = useState('')
-  const [endDate, setEndDate] = useState('')
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined)
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined)
   const [notes, setNotes] = useState('')
   const [status, setStatus] = useState('Active')
 
@@ -97,8 +101,8 @@ export default function NewPolicyPage() {
   // Derive duration during render
   const calculateDuration = () => {
     if (startDate && endDate) {
-      const start = new Date(startDate)
-      const end = new Date(endDate)
+      const start = startDate
+      const end = endDate
       const diffTime = Math.abs(end.getTime() - start.getTime())
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
 
@@ -128,6 +132,18 @@ export default function NewPolicyPage() {
       toast.error('Please select an Insurance Company')
       return
     }
+    if (!name.trim()) {
+      toast.error('Client Name is required')
+      return
+    }
+    if (!phone || phone.length < 13) {
+      toast.error('Valid Phone Number (+91...) is required')
+      return
+    }
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast.error('Invalid Email Address')
+      return
+    }
 
     setLoading(true)
     const toastId = toast.loading('Saving policy...')
@@ -141,6 +157,8 @@ export default function NewPolicyPage() {
         category: "General" | "Health" | "Life";
         insurance_company: string;
         product_name: string | null;
+        product_type: string | null;
+        vehicle_number: string | null;
         sum_insured: string;
         premium_amount: string;
         start_date: string;
@@ -156,10 +174,12 @@ export default function NewPolicyPage() {
         category,
         insurance_company: companies.find(c => c.id === selectedCompanyId)?.name || selectedCompanyId,
         product_name: productName || null,
+        product_type: productType || null,
+        vehicle_number: vehicleNumber || null,
         sum_insured: sumInsured,
         premium_amount: premiumAmount,
-        start_date: startDate,
-        end_date: endDate,
+        start_date: startDate ? format(startDate, 'yyyy-MM-dd') : '',
+        end_date: endDate ? format(endDate, 'yyyy-MM-dd') : '',
         policy_duration: policyDuration,
         notes: notes,
         status
@@ -251,7 +271,7 @@ export default function NewPolicyPage() {
                   className={`w-full border rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium ${customerFound ? 'bg-amber-50 border-amber-300 cursor-not-allowed' : 'bg-slate-50 border-slate-200'
                     }`}
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => setName(e.target.value.toUpperCase())}
                   placeholder="e.g. John Doe"
                 />
               </div>
@@ -265,7 +285,17 @@ export default function NewPolicyPage() {
                   className={`w-full border rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium ${customerFound ? 'bg-amber-50 border-amber-300 cursor-not-allowed' : 'bg-slate-50 border-slate-200'
                     }`}
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={(e) => {
+                    // Force +91 prefix and numeric
+                    let val = e.target.value.replace(/[^0-9+]/g, '')
+                    if (!val.startsWith('+91')) {
+                      // If user deletes +91, just reset or keep it
+                      if (val === '91') val = '+91'
+                      else if (val.length < 3) val = '+91'
+                      else if (!val.includes('+91')) val = '+91' + val
+                    }
+                    if (val.length <= 13) setPhone(val)
+                  }}
                   placeholder="e.g. +91 98765 43210"
                 />
               </div>
@@ -325,6 +355,35 @@ export default function NewPolicyPage() {
                 </select>
               </div>
 
+              {category === 'General' && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Product Type</label>
+                  <select
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium appearance-none"
+                    value={productType}
+                    onChange={(e) => setProductType(e.target.value)}
+                  >
+                    <option value="">Select Type</option>
+                    <option value="Vehicle Insurance">Vehicle Insurance</option>
+                    <option value="Health Insurance">Health Insurance</option>
+                    <option value="Travel Insurance">Travel Insurance</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+              )}
+
+              {productType === 'Vehicle Insurance' && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Vehicle Number</label>
+                  <input
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
+                    value={vehicleNumber}
+                    onChange={(e) => setVehicleNumber(e.target.value.toUpperCase())}
+                    placeholder="e.g. MH02AB1234"
+                  />
+                </div>
+              )}
+
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Policy Number <span className="text-red-500">*</span></label>
                 <input
@@ -370,21 +429,17 @@ export default function NewPolicyPage() {
 
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Policy Start Date</label>
-                <input
-                  type="date"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
+                <DatePicker
+                  date={startDate}
+                  setDate={setStartDate}
                 />
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Policy End Date</label>
-                <input
-                  type="date"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
+                <DatePicker
+                  date={endDate}
+                  setDate={setEndDate}
                 />
               </div>
 

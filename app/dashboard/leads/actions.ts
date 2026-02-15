@@ -24,7 +24,7 @@ export async function getLeads({
     .order('created_at', { ascending: false })
 
   if (query) {
-    dbQuery = dbQuery.or(`name.ilike.%${query}%,email.ilike.%${query}%,phone.ilike.%${query}%`)
+    dbQuery = dbQuery.or(`name.ilike.%${query}%,email.ilike.%${query}%,phone.ilike.%${query}%,company_name.ilike.%${query}%`)
   }
 
   if (status && status !== 'All') {
