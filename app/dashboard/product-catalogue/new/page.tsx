@@ -13,9 +13,6 @@ export default function NewProductPage() {
         name: '',
         category: 'General',
         insurer: '',
-        coverage_amount: undefined,
-        premium_range_min: undefined,
-        premium_range_max: undefined,
         features: '',
         description: '',
     })
