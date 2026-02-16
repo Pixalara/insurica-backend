@@ -63,6 +63,7 @@ export async function uploadProductPDF(formData: FormData) {
 export async function getProducts(filters?: {
   query?: string
   category?: string
+  insurer?: string
 }) {
   const supabase = await createClient()
   
@@ -76,8 +77,13 @@ export async function getProducts(filters?: {
     query = query.or(`name.ilike.%${filters.query}%,insurer.ilike.%${filters.query}%`)
   }
   
+  // Note: frontend might still send 'category' filter, we map it to 'product_category' column
   if (filters?.category && filters.category !== 'All') {
-    query = query.eq('category', filters.category)
+    query = query.eq('product_category', filters.category)
+  }
+
+  if (filters?.insurer) {
+    query = query.eq('insurer', filters.insurer)
   }
   
 
@@ -121,7 +127,6 @@ export async function createProduct(formData: ProductFormData) {
     .from('products')
     .insert([{
       ...formData,
-      features: formData.features ? formData.features.split(',').map(f => f.trim()) : [],
       agent_id: user?.id || null,
       updated_at: new Date().toISOString()
     }])
@@ -144,7 +149,6 @@ export async function updateProduct(id: string, formData: ProductFormData) {
     .from('products')
     .update({
       ...formData,
-      features: formData.features ? formData.features.split(',').map(f => f.trim()) : [],
       updated_at: new Date().toISOString(),
     })
     .eq('id', id)

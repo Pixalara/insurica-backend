@@ -2,9 +2,13 @@
 
 import { use, useState, useEffect } from 'react'
 import { getClient, updateClient, getCompanies } from '../../actions'
+import { getProducts } from '../../../product-catalogue/actions'
+import type { Product } from '../../../product-catalogue/types'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
+import { DatePicker } from '@/components/ui/date-picker'
+import { format } from 'date-fns'
 import { toast } from 'sonner'
 
 const CATEGORIES = ['General', 'Health', 'Life'] as const
@@ -20,6 +24,7 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [notFound, setNotFound] = useState(false)
+  const [fetchingProducts, setFetchingProducts] = useState(false)
 
   // Fields
   const [name, setName] = useState('')
@@ -32,6 +37,7 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
   const [companies, setCompanies] = useState<Company[]>([])
   const [selectedCompanyId, setSelectedCompanyId] = useState('')
   const [insuranceCompany, setInsuranceCompany] = useState('')
+  const [products, setProducts] = useState<Product[]>([])
 
   // Other Fields
   const [email, setEmail] = useState('')
@@ -39,15 +45,12 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
   const [productName, setProductName] = useState('')
   const [sumInsured, setSumInsured] = useState('')
   const [premiumAmount, setPremiumAmount] = useState('')
-  const [startDate, setStartDate] = useState('')
-  const [endDate, setEndDate] = useState('')
-  const [policyDuration, setPolicyDuration] = useState('')
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined)
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined)
   const [notes, setNotes] = useState('')
   const [status, setStatus] = useState('Active')
 
-
   const router = useRouter()
-
 
   useEffect(() => {
     async function fetchClient() {
@@ -67,14 +70,11 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
         setProductType(client.product_type || '')
         setVehicleNumber(client.vehicle_number || '')
         setInsuranceCompany(client.insurance_company || '')
-        // Try to match company by name if companies are loaded
-        setSelectedCompanyId('')
         setProductName(client.product_name || '')
         setSumInsured(client.sum_insured?.toString() || '')
         setPremiumAmount(client.premium_amount?.toString() || '')
-        setStartDate(client.start_date || '')
-        setEndDate(client.end_date || '')
-        setPolicyDuration('')
+        setStartDate(client.start_date ? new Date(client.start_date) : undefined)
+        setEndDate(client.end_date ? new Date(client.end_date) : undefined)
         setNotes(client.remarks || '')
         setStatus(client.status || 'Active')
 
@@ -91,7 +91,6 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
     }
   }, [id])
 
-
   useEffect(() => {
     async function fetchCompanies() {
       if (!category) {
@@ -100,12 +99,11 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
       }
 
       try {
-        const companiesData = await getCompanies(category) as Company[]
-        setCompanies(companiesData)
+        const data = await getCompanies(category)
+        setCompanies(data as Company[])
 
-        // After fetching companies, try to match the existing insuranceCompany name to an ID
-        if (insuranceCompany && companiesData) {
-          const match = (companiesData as Company[]).find(c =>
+        if (insuranceCompany && data) {
+          const match = (data as Company[]).find(c =>
             c.name.toLowerCase() === insuranceCompany.toLowerCase()
           )
           if (match) {
@@ -120,8 +118,38 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
     fetchCompanies()
   }, [category, insuranceCompany])
 
-  // Auto-calculate duration
+  // Fetch Products based on Category and Company
   useEffect(() => {
+    async function fetchProducts() {
+      if (!category || !selectedCompanyId) {
+        setProducts([])
+        return
+      }
+
+      setFetchingProducts(true)
+      try {
+        // Find the company name from the selected ID to filter by insurer name
+        const selectedCompany = companies.find(c => c.id === selectedCompanyId)
+        if (selectedCompany) {
+          const { products } = await getProducts({ 
+            category, 
+            insurer: selectedCompany.name 
+          })
+          setProducts(products)
+        }
+      } catch (err) {
+        console.error('Failed to fetch products', err)
+        toast.error('Failed to load products')
+      } finally {
+        setFetchingProducts(false)
+      }
+    }
+
+    fetchProducts()
+  }, [category, selectedCompanyId, companies])
+
+  // Derive duration during render
+  const calculateDuration = () => {
     if (startDate && endDate) {
       const start = new Date(startDate)
       const end = new Date(endDate)
@@ -131,14 +159,16 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
       if (!isNaN(diffDays)) {
         if (diffDays >= 365) {
           const years = (diffDays / 365).toFixed(1)
-          setPolicyDuration(`${years} Year(s)`)
+          return `${years} Year(s)`
         } else {
-          setPolicyDuration(`${diffDays} Days`)
+          return `${diffDays} Days`
         }
       }
     }
-  }, [startDate, endDate])
+    return ''
+  }
 
+  const policyDuration = calculateDuration()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -156,7 +186,24 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
     const toastId = toast.loading('Updating client/policy...')
 
     try {
-      const formData = {
+      const formData: {
+        name: string;
+        email: string | null;
+        phone: string | null;
+        policy_number: string;
+        category: "General" | "Health" | "Life";
+        insurance_company: string;
+        product_name: string | null;
+        sum_insured: string;
+        premium_amount: string;
+        start_date: string;
+        end_date: string;
+        policy_duration: string;
+        notes: string;
+        status: string;
+        product_type: string | null;
+        vehicle_number: string | null;
+      } = {
         name,
         email: email || null,
         phone: phone || null,
@@ -166,13 +213,13 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
         product_name: productName || null,
         sum_insured: sumInsured,
         premium_amount: premiumAmount,
-        start_date: startDate,
-        end_date: endDate,
+        start_date: startDate ? format(startDate, 'yyyy-MM-dd') : '',
+        end_date: endDate ? format(endDate, 'yyyy-MM-dd') : '',
         policy_duration: policyDuration,
         notes: notes,
         status,
         product_type: category === 'General' ? productType : null,
-        vehicle_number: (category === 'General' && productType === 'Vehicle Insurance') ? vehicleNumber : null
+        vehicle_number: (category === 'General' && productType === 'Vehicle') ? vehicleNumber : null
       }
 
       await updateClient(id, formData)
@@ -207,7 +254,7 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
   }
 
   return (
-    <div className="max-w-3xl mx-auto pb-10 px-4 sm:px-0">
+    <div className="max-w-3xl mx-auto pb-10">
       <div className="mb-6">
         <Link href="/dashboard/clients" className="text-slate-500 hover:text-slate-800 gap-2 mb-2 inline-flex items-center">
           <ArrowLeft className="w-4 h-4" /> Back to Directory
@@ -216,7 +263,7 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
         <p className="text-slate-500 text-sm mt-1">Update client and policy details.</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-slate-200 space-y-6">
+      <form onSubmit={handleSubmit} className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-6">
 
         {/* Basic Information Section */}
         <div>
@@ -276,38 +323,6 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
               </select>
             </div>
 
-            {/* Dynamic Product Type for General Insurance */}
-            {category === 'General' && (
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Product Type <span className="text-red-500">*</span></label>
-                <select
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium appearance-none"
-                  value={productType}
-                  onChange={(e) => setProductType(e.target.value)}
-                >
-                  <option value="">Select Type</option>
-                  <option value="Vehicle Insurance">Vehicle Insurance</option>
-                  <option value="Fire Insurance">Fire Insurance</option>
-                  <option value="Cyber Insurance">Cyber Insurance</option>
-                  <option value="Travel Insurance">Travel Insurance</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
-            )}
-
-            {/* Dynamic Vehicle Number */}
-            {category === 'General' && productType === 'Vehicle Insurance' && (
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Vehicle Number <span className="text-red-500">*</span></label>
-                <input
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
-                  value={vehicleNumber}
-                  onChange={(e) => setVehicleNumber(e.target.value)}
-                  placeholder="e.g. MH 02 AB 1234"
-                />
-              </div>
-            )}
-
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Insurer Name <span className="text-red-500">*</span></label>
               <select
@@ -339,13 +354,46 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
 
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Product Opted </label>
-              <input
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
+              <select
+                disabled={!category || !selectedCompanyId || fetchingProducts}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium appearance-none disabled:bg-slate-100 disabled:text-slate-400"
                 value={productName}
-                onChange={(e) => setProductName(e.target.value)}
-                placeholder="e.g. Jeevan Anand"
-              />
+                onChange={(e) => {
+                  const selectedName = e.target.value
+                  setProductName(selectedName)
+                  // Look up the selected product's product_type
+                  const selectedProduct = products.find(p => p.name === selectedName)
+                  setProductType(selectedProduct?.product_type || '')
+                  // Clear vehicle number if product changes
+                  setVehicleNumber('')
+                }}
+              >
+                <option value="">
+                  {fetchingProducts ? 'Loading Products...' : (selectedCompanyId ? 'Select Product' : 'Select Insurer First')}
+                </option>
+                {/* Handle pre-selected product that might not be in the list */}
+                {productName && !products.find(p => p.name === productName) && !fetchingProducts && selectedCompanyId && (
+                  <option value={productName}>{productName} (Current)</option>
+                )}
+                {products.map(product => (
+                  <option key={product.id} value={product.name}>{product.name}</option>
+                ))}
+              </select>
             </div>
+
+            {/* Vehicle Number - only visible when Category is General and Product Type is Vehicle */}
+            {category === 'General' && productType === 'Vehicle' && (
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Vehicle Number <span className="text-red-500">*</span></label>
+                <input
+                  required
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
+                  value={vehicleNumber}
+                  onChange={(e) => setVehicleNumber(e.target.value.toUpperCase())}
+                  placeholder="e.g. KA01AB1234"
+                />
+              </div>
+            )}
 
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Sum Insured</label>
@@ -370,20 +418,16 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
 
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Policy Start Date</label>
-              <input
-                type="date"
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
+              <DatePicker
+                date={startDate}
+                setDate={setStartDate}
               />
             </div>
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Policy End Date</label>
-              <input
-                type="date"
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
+              <DatePicker
+                date={endDate}
+                setDate={setEndDate}
               />
             </div>
 
@@ -423,7 +467,7 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
           </div>
         </div>
 
-        <div className="pt-4 flex flex-col sm:flex-row gap-3 border-t border-slate-100 mt-2">
+        <div className="pt-4 flex gap-3 border-t border-slate-100 mt-2">
           <button
             type="submit"
             disabled={saving}

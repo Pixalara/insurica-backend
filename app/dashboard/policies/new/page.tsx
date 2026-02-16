@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { createClient, getCompanies } from '../../clients/actions'
+import { getProducts } from '../../product-catalogue/actions'
+import type { Product } from '../../product-catalogue/types'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Lock, CheckCircle2 } from 'lucide-react'
@@ -34,6 +36,7 @@ export default function NewPolicyPage() {
   // Dependent on Category
   const [companies, setCompanies] = useState<Company[]>([])
   const [selectedCompanyId, setSelectedCompanyId] = useState('')
+  const [products, setProducts] = useState<Product[]>([])
   const [productType, setProductType] = useState('')
   const [vehicleNumber, setVehicleNumber] = useState('')
 
@@ -48,6 +51,7 @@ export default function NewPolicyPage() {
 
   const [loading, setLoading] = useState(false)
   const [fetchingCompanies, setFetchingCompanies] = useState(false)
+  const [fetchingProducts, setFetchingProducts] = useState(false)
 
   const router = useRouter()
 
@@ -80,6 +84,8 @@ export default function NewPolicyPage() {
       if (!category) {
         setCompanies([])
         setSelectedCompanyId('')
+        setProducts([])
+        setProductName('')
         return
       }
 
@@ -97,6 +103,37 @@ export default function NewPolicyPage() {
 
     fetchCompanies()
   }, [category])
+
+  // Fetch Products based on Category and Company
+  useEffect(() => {
+    async function fetchProducts() {
+      if (!category || !selectedCompanyId) {
+        setProducts([])
+        setProductName('')
+        return
+      }
+
+      setFetchingProducts(true)
+      try {
+        // Find the company name from the selected ID to filter by insurer name
+        const selectedCompany = companies.find(c => c.id === selectedCompanyId)
+        if (selectedCompany) {
+          const { products } = await getProducts({ 
+            category, 
+            insurer: selectedCompany.name 
+          })
+          setProducts(products)
+        }
+      } catch (err) {
+        console.error('Failed to fetch products', err)
+        toast.error('Failed to load products')
+      } finally {
+        setFetchingProducts(false)
+      }
+    }
+
+    fetchProducts()
+  }, [category, selectedCompanyId, companies])
 
   // Derive duration during render
   const calculateDuration = () => {
@@ -355,35 +392,6 @@ export default function NewPolicyPage() {
                 </select>
               </div>
 
-              {category === 'General' && (
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Product Type</label>
-                  <select
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium appearance-none"
-                    value={productType}
-                    onChange={(e) => setProductType(e.target.value)}
-                  >
-                    <option value="">Select Type</option>
-                    <option value="Vehicle Insurance">Vehicle Insurance</option>
-                    <option value="Health Insurance">Health Insurance</option>
-                    <option value="Travel Insurance">Travel Insurance</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-              )}
-
-              {productType === 'Vehicle Insurance' && (
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Vehicle Number</label>
-                  <input
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
-                    value={vehicleNumber}
-                    onChange={(e) => setVehicleNumber(e.target.value.toUpperCase())}
-                    placeholder="e.g. MH02AB1234"
-                  />
-                </div>
-              )}
-
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Policy Number <span className="text-red-500">*</span></label>
                 <input
@@ -397,13 +405,42 @@ export default function NewPolicyPage() {
 
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Product Opted</label>
-                <input
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
+                <select
+                  disabled={!category || !selectedCompanyId || fetchingProducts}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium appearance-none disabled:bg-slate-100 disabled:text-slate-400"
                   value={productName}
-                  onChange={(e) => setProductName(e.target.value)}
-                  placeholder="e.g. Jeevan Anand"
-                />
+                  onChange={(e) => {
+                    const selectedName = e.target.value
+                    setProductName(selectedName)
+                    // Look up the selected product's product_type
+                    const selectedProduct = products.find(p => p.name === selectedName)
+                    setProductType(selectedProduct?.product_type || '')
+                    // Clear vehicle number if product changes
+                    setVehicleNumber('')
+                  }}
+                >
+                  <option value="">
+                    {fetchingProducts ? 'Loading Products...' : (selectedCompanyId ? 'Select Product' : 'Select Insurer First')}
+                  </option>
+                  {products.map(product => (
+                    <option key={product.id} value={product.name}>{product.name}</option>
+                  ))}
+                </select>
               </div>
+
+              {/* Vehicle Number - only visible when Category is General and Product Type is Vehicle */}
+              {category === 'General' && productType === 'Vehicle' && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Vehicle Number <span className="text-red-500">*</span></label>
+                  <input
+                    required
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
+                    value={vehicleNumber}
+                    onChange={(e) => setVehicleNumber(e.target.value.toUpperCase())}
+                    placeholder="e.g. KA01AB1234"
+                  />
+                </div>
+              )}
 
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Sum Insured</label>
