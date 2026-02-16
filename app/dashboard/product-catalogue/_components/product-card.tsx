@@ -82,8 +82,8 @@ export function ProductCard({ product, onEdit, onDelete }: ProductCardProps) {
             {/* Header */}
             <div className="p-5 border-b border-slate-100">
                 <div className="flex items-start justify-between mb-3">
-                    <span className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${getCategoryColor(product.category)}`}>
-                        {product.category}
+                    <span className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${getCategoryColor(product.product_category)}`}>
+                        {product.product_category}
                     </span>
                     <div className="flex gap-2">
                         <button

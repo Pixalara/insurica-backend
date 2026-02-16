@@ -11,9 +11,9 @@ export default function NewProductPage() {
     const [submitting, setSubmitting] = useState(false)
     const [formData, setFormData] = useState<ProductFormData>({
         name: '',
-        category: 'General',
+        product_category: 'General',
+        product_type: '',
         insurer: '',
-        features: '',
         description: '',
     })
 
@@ -55,15 +55,15 @@ export default function NewProductPage() {
                     />
                 </div>
 
-                {/* Category */}
+                {/* Product Category */}
                 <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">
-                        Category <span className="text-red-500">*</span>
+                        Product Category <span className="text-red-500">*</span>
                     </label>
                     <select
                         required
-                        value={formData.category}
-                        onChange={(e) => setFormData({ ...formData, category: e.target.value as 'General' | 'Health' | 'Life' })}
+                        value={formData.product_category}
+                        onChange={(e) => setFormData({ ...formData, product_category: e.target.value as 'General' | 'Health' | 'Life' })}
                         className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                         <option value="General">General Insurance</option>
@@ -101,17 +101,17 @@ export default function NewProductPage() {
                     />
                 </div>
 
-                {/* Features */}
+                {/* Product Type */}
                 <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">
-                        Features (comma-separated)
+                        Product Type
                     </label>
                     <input
                         type="text"
-                        value={formData.features}
-                        onChange={(e) => setFormData({ ...formData, features: e.target.value })}
+                        value={formData.product_type}
+                        onChange={(e) => setFormData({ ...formData, product_type: e.target.value })}
                         className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="e.g., Zero Depreciation, Roadside Assistance, NCB Protection"
+                        placeholder="e.g., Vehicle, Term Life, Individual Health"
                     />
                 </div>
 

@@ -12,8 +12,6 @@ export default async function ClientsPage({
 }) {
   const params = await searchParams; // Next.js 15 requires awaiting params
   const query = params.query || ''
-  const status = params.status || 'All'
-  const product = params.product || 'All'
   const currentPage = Number(params.page) || 1
 
   const { customers, totalCount } = await getCustomers({

@@ -1,11 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Upload, Package, Search, X, Filter } from 'lucide-react'
 import { ProductModal } from './product-modal'
 import { ProductCard } from './product-card'
 import { deleteProduct } from '../actions'
+import { getCompanies } from '../../clients/actions'
 import { toast } from 'sonner'
 import type { Product } from '../types'
 
@@ -25,19 +26,7 @@ const CATEGORIES = [
     { value: 'Life', label: 'Life' },
 ]
 
-// Insurance companies
-const INSURERS = [
-    { value: 'All', label: 'All Companies' },
-    { value: 'HDFC ERGO', label: 'HDFC ERGO' },
-    { value: 'Star Health', label: 'Star Health' },
-    { value: 'HDFC Life', label: 'HDFC Life' },
-    { value: 'ICICI Lombard', label: 'ICICI Lombard' },
-    { value: 'Bajaj Allianz', label: 'Bajaj Allianz' },
-    { value: 'LIC', label: 'LIC' },
-    { value: 'Max Life', label: 'Max Life' },
-    { value: 'Max Bupa', label: 'Max Bupa' },
-    { value: 'Tata AIG', label: 'Tata AIG' },
-]
+
 
 export function ProductCatalogueClient({
     products,
@@ -51,8 +40,31 @@ export function ProductCatalogueClient({
     const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
     const [isDeleting, setIsDeleting] = useState(false)
     const [searchValue, setSearchValue] = useState(initialQuery)
+    const [companies, setCompanies] = useState<{ id: string; name: string }[]>([])
+    const [loadingCompanies, setLoadingCompanies] = useState(false)
     const router = useRouter()
     const searchParams = useSearchParams()
+
+    // Fetch companies from DB, filtered by selected category
+    useEffect(() => {
+        async function fetchCompanies() {
+            setLoadingCompanies(true)
+            try {
+                const categoryFilter = initialCategory && initialCategory !== 'All'
+                    ? initialCategory as 'General' | 'Health' | 'Life'
+                    : undefined
+                const data = await getCompanies(categoryFilter)
+                const companyList = data as { id: string; name: string }[]
+                setCompanies(companyList)
+            } catch (error) {
+                console.error('Failed to fetch companies:', error)
+                toast.error('Failed to load insurance companies')
+            } finally {
+                setLoadingCompanies(false)
+            }
+        }
+        fetchCompanies()
+    }, [initialCategory])
 
     const updateFilter = (key: string, value: string) => {
         const params = new URLSearchParams(searchParams.toString())
@@ -60,6 +72,10 @@ export function ProductCatalogueClient({
             params.delete(key)
         } else {
             params.set(key, value)
+        }
+        // If category changes, also reset the insurer filter
+        if (key === 'category') {
+            params.delete('insurer')
         }
         router.push(`/dashboard/product-catalogue?${params.toString()}`)
     }
@@ -171,10 +187,14 @@ export function ProductCatalogueClient({
                         <select
                             value={initialInsurer || 'All'}
                             onChange={(e) => updateFilter('insurer', e.target.value)}
-                            className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                            disabled={loadingCompanies}
+                            className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white disabled:bg-slate-100 disabled:text-slate-400"
                         >
-                            {INSURERS.map((ins) => (
-                                <option key={ins.value} value={ins.value}>{ins.label}</option>
+                            <option value="All">
+                                {loadingCompanies ? 'Loading...' : 'All Companies'}
+                            </option>
+                            {companies.map((comp) => (
+                                <option key={comp.id} value={comp.name}>{comp.name}</option>
                             ))}
                         </select>
                     </div>
