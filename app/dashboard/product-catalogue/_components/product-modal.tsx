@@ -19,7 +19,12 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
 
     const [productName, setProductName] = useState(product?.name || '')
     const [productType, setProductType] = useState<'General' | 'Health' | 'Life' | ''>(product?.product_category || '')
+    const [productCategory, setProductCategory] = useState<'General' | 'Health' | 'Life' | ''>(product?.product_category || '')
     const [insurer, setInsurer] = useState(product?.insurer || '')
+    const [insurerName, setInsurerName] = useState(product?.insurer || '')
+    const [selectedCompanyId, setSelectedCompanyId] = useState('')
+    const [companies, setCompanies] = useState<{ id: string; name: string }[]>([])
+    const [loadingCompanies, setLoadingCompanies] = useState(false)
 
     const [description, setDescription] = useState(product?.description || '')
     const [pdfFile, setPdfFile] = useState<File | null>(null)
@@ -63,25 +68,25 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
                 setCompanies([])
                 return
             }
-            
+
             setLoadingCompanies(true)
             try {
                 const data = await getCompanies(productCategory)
                 // Cast to correct type since getCompanies returns a generic array type
                 const companyList = data as { id: string; name: string }[]
                 setCompanies(companyList)
-                
+
                 // If editing or existing selection, try to match the name to an ID to select it in dropdown
                 if (insurerName) {
-                     const matched = companyList.find(c => c.name === insurerName)
-                     if (matched) {
-                         setSelectedCompanyId(matched.id)
-                     } else {
-                         // If name doesn't match an ID (unlikely if data is consistent), 
-                         // we might just leave dropdown unselected or handle custom input.
-                         // For now, we assume standard flow.
-                         setSelectedCompanyId('')
-                     }
+                    const matched = companyList.find(c => c.name === insurerName)
+                    if (matched) {
+                        setSelectedCompanyId(matched.id)
+                    } else {
+                        // If name doesn't match an ID (unlikely if data is consistent), 
+                        // we might just leave dropdown unselected or handle custom input.
+                        // For now, we assume standard flow.
+                        setSelectedCompanyId('')
+                    }
                 }
             } catch (error) {
                 console.error('Failed to fetch companies:', error)
@@ -158,7 +163,7 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
     const handleCompanyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const newId = e.target.value
         setSelectedCompanyId(newId)
-        
+
         // Find name
         const company = companies.find(c => c.id === newId)
         if (company) {
@@ -348,7 +353,7 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
                             </label>
                             <select
                                 value={productType}
-                                onChange={(e) => setProductType(e.target.value)}
+                                onChange={(e) => setProductType(e.target.value as 'General' | 'Health' | 'Life' | '')}
                                 className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 required
                             >
@@ -361,8 +366,8 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
                         </div>
                     </div>
 
-                     {/* Insurer */}
-                     <div>
+                    {/* Insurer */}
+                    <div>
                         <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">
                             Insurance Company <span className="text-red-500">*</span>
                         </label>

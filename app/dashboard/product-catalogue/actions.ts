@@ -127,14 +127,10 @@ export async function createProduct(formData: ProductFormData) {
   // Get current user (agent)
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Strip out 'features' — column doesn't exist in the DB
-  const { features, ...dbData } = formData
-
-
   const { data, error } = await supabase
     .from('products')
     .insert([{
-      ...dbData,
+      ...formData,
       agent_id: user?.id || null,
       updated_at: new Date().toISOString()
     }])
@@ -154,13 +150,10 @@ export async function createProduct(formData: ProductFormData) {
 export async function updateProduct(id: string, formData: ProductFormData) {
   const supabase = await createClient()
 
-  // Strip out 'features' — column doesn't exist in the DB
-  const { features, ...dbData } = formData
-
   const { data, error } = await supabase
     .from('products')
     .update({
-      ...dbData,
+      ...formData,
       updated_at: new Date().toISOString(),
     })
     .eq('id', id)
