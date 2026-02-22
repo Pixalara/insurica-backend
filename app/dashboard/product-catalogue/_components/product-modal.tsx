@@ -17,7 +17,7 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
     const isEdit = !!product
 
     const [productName, setProductName] = useState(product?.name || '')
-    const [productType, setProductType] = useState<'General' | 'Health' | 'Life' | ''>(product?.category || '')
+    const [productType, setProductType] = useState<'General' | 'Health' | 'Life' | ''>(product?.product_category || '')
     const [insurer, setInsurer] = useState(product?.insurer || '')
 
     const [description, setDescription] = useState(product?.description || '')
@@ -32,7 +32,7 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
     useEffect(() => {
         if (product) {
             setProductName(product.name)
-            setProductType(product.category)
+            setProductType(product.product_category)
             setInsurer(product.insurer)
 
             setDescription(product.description || '')
@@ -153,7 +153,7 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
 
             const formData = {
                 name: productName,
-                category: productType as 'General' | 'Health' | 'Life',
+                product_category: productType as 'General' | 'Health' | 'Life',
                 insurer,
                 description: description || undefined,
                 features: '',

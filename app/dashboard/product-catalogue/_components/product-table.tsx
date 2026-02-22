@@ -74,13 +74,13 @@ export function ProductTable({ products }: ProductTableProps) {
                                     )}
                                 </td>
                                 <td className="px-6 py-4">
-                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${product.category === 'Health'
+                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${product.product_category === 'Health'
                                         ? 'bg-green-100 text-green-800'
-                                        : product.category === 'Life'
+                                        : product.product_category === 'Life'
                                             ? 'bg-purple-100 text-purple-800'
                                             : 'bg-blue-100 text-blue-800'
                                         }`}>
-                                        {product.category}
+                                        {product.product_category}
                                     </span>
                                 </td>
                                 <td className="px-6 py-4 text-sm text-slate-900">

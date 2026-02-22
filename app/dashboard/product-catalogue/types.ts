@@ -1,7 +1,7 @@
 export interface Product {
   id: string
   name: string
-  category: 'General' | 'Health' | 'Life'
+  product_category: 'General' | 'Health' | 'Life'
   insurer: string
   features?: string[]
   description?: string
@@ -14,7 +14,7 @@ export interface Product {
 
 export interface ProductFormData {
   name: string
-  category: 'General' | 'Health' | 'Life'
+  product_category: 'General' | 'Health' | 'Life'
   insurer: string
   features?: string
   description?: string

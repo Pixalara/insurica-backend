@@ -46,10 +46,12 @@ export async function uploadProductPDF(formData: FormData) {
     return { success: false, error: error.message }
   }
 
+
   // Get public URL
   const { data: urlData } = supabase.storage
     .from('product-pdfs')
     .getPublicUrl(data.path)
+
 
   return {
     success: true,
@@ -66,10 +68,13 @@ export async function getProducts(filters?: {
 }) {
   const supabase = await createClient()
   
+  // Check auth status
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+
   let query = supabase
     .from('products')
     .select('*', { count: 'exact' })
-    .order('updated_at', { ascending: false, nullsFirst: false })
+    .order('created_at', { ascending: false })
 
   // Apply filters
   if (filters?.query) {
@@ -77,20 +82,23 @@ export async function getProducts(filters?: {
   }
   
   if (filters?.category && filters.category !== 'All') {
-    query = query.eq('category', filters.category)
+    query = query.eq('product_category', filters.category)
   }
   
 
   const { data, error, count } = await query
 
   if (error) {
-    console.error('Error fetching products:', error)
-    return { products: [], totalCount: 0 }
+    const errMsg = error.message || error.code || JSON.stringify(error)
+    console.error('Error fetching products:', errMsg, error.hint, error.details)
+    return { products: [], totalCount: 0, errorMessage: errMsg }
   }
+
 
   return {
     products: (data as Product[]) || [],
     totalCount: count || 0,
+    errorMessage: null,
   }
 }
 
@@ -117,11 +125,14 @@ export async function createProduct(formData: ProductFormData) {
   // Get current user (agent)
   const { data: { user } } = await supabase.auth.getUser()
 
+  // Strip out 'features' — column doesn't exist in the DB
+  const { features, ...dbData } = formData
+
+
   const { data, error } = await supabase
     .from('products')
     .insert([{
-      ...formData,
-      features: formData.features ? formData.features.split(',').map(f => f.trim()) : [],
+      ...dbData,
       agent_id: user?.id || null,
       updated_at: new Date().toISOString()
     }])
@@ -133,6 +144,7 @@ export async function createProduct(formData: ProductFormData) {
     return { success: false, error: error.message }
   }
 
+
   revalidatePath('/dashboard/product-catalogue')
   return { success: true, data }
 }
@@ -140,11 +152,13 @@ export async function createProduct(formData: ProductFormData) {
 export async function updateProduct(id: string, formData: ProductFormData) {
   const supabase = await createClient()
 
+  // Strip out 'features' — column doesn't exist in the DB
+  const { features, ...dbData } = formData
+
   const { data, error } = await supabase
     .from('products')
     .update({
-      ...formData,
-      features: formData.features ? formData.features.split(',').map(f => f.trim()) : [],
+      ...dbData,
       updated_at: new Date().toISOString(),
     })
     .eq('id', id)

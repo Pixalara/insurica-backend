@@ -11,7 +11,7 @@ export default function NewProductPage() {
     const [submitting, setSubmitting] = useState(false)
     const [formData, setFormData] = useState<ProductFormData>({
         name: '',
-        category: 'General',
+        product_category: 'General',
         insurer: '',
         features: '',
         description: '',
@@ -62,8 +62,8 @@ export default function NewProductPage() {
                     </label>
                     <select
                         required
-                        value={formData.category}
-                        onChange={(e) => setFormData({ ...formData, category: e.target.value as 'General' | 'Health' | 'Life' })}
+                        value={formData.product_category}
+                        onChange={(e) => setFormData({ ...formData, product_category: e.target.value as 'General' | 'Health' | 'Life' })}
                         className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                         <option value="General">General Insurance</option>

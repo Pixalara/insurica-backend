@@ -1,6 +1,6 @@
 'use client'
 
-import { Download, Share2 } from 'lucide-react'
+import { Download, Share2, FileText } from 'lucide-react'
 import { toast } from 'sonner'
 import type { Product } from '../types'
 
@@ -82,8 +82,8 @@ export function ProductCard({ product, onEdit, onDelete }: ProductCardProps) {
             {/* Header */}
             <div className="p-5 border-b border-slate-100">
                 <div className="flex items-start justify-between mb-3">
-                    <span className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${getCategoryColor(product.category)}`}>
-                        {product.category}
+                    <span className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${getCategoryColor(product.product_category)}`}>
+                        {product.product_category}
                     </span>
                     <div className="flex gap-2">
                         <button
@@ -112,7 +112,32 @@ export function ProductCard({ product, onEdit, onDelete }: ProductCardProps) {
 
             {/* Details */}
             <div className="p-5 space-y-3">
-
+                {/* PDF Indicator */}
+                {product.pdf_url ? (
+                    <a
+                        href={product.pdf_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg border border-blue-100 hover:bg-blue-100 transition-colors group/pdf cursor-pointer"
+                    >
+                        <div className="bg-blue-100 p-2 rounded-lg group-hover/pdf:bg-blue-200 transition-colors">
+                            <FileText className="w-4 h-4 text-blue-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-blue-800 truncate">
+                                {product.pdf_filename || 'Brochure.pdf'}
+                            </p>
+                            <p className="text-xs text-blue-500">Tap to view PDF</p>
+                        </div>
+                    </a>
+                ) : (
+                    <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-100">
+                        <div className="bg-slate-100 p-2 rounded-lg">
+                            <FileText className="w-4 h-4 text-slate-400" />
+                        </div>
+                        <p className="text-xs text-slate-400 font-medium">No brochure uploaded</p>
+                    </div>
+                )}
 
                 {/* Description */}
                 {product.description && (
