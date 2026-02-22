@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { X, Upload, FileText, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { createProduct, updateProduct, uploadProductPDF, deleteProductPDF } from '../actions'
+import { getCompanies } from '../../clients/actions'
 import { useRouter } from 'next/navigation'
 import type { Product } from '../types'
 
@@ -41,8 +42,10 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
         } else {
             // Reset for new product
             setProductName('')
+            setProductCategory('')
             setProductType('')
-            setInsurer('')
+            setInsurerName('')
+            setSelectedCompanyId('')
 
             setDescription('')
             setExistingPdfUrl('')
@@ -52,6 +55,47 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
         setPdfToDelete(null)
         setErrors([])
     }, [product, isOpen])
+
+    // Fetch companies when product type changes
+    useEffect(() => {
+        async function fetchCompanies() {
+            if (!productCategory) {
+                setCompanies([])
+                return
+            }
+            
+            setLoadingCompanies(true)
+            try {
+                const data = await getCompanies(productCategory)
+                // Cast to correct type since getCompanies returns a generic array type
+                const companyList = data as { id: string; name: string }[]
+                setCompanies(companyList)
+                
+                // If editing or existing selection, try to match the name to an ID to select it in dropdown
+                if (insurerName) {
+                     const matched = companyList.find(c => c.name === insurerName)
+                     if (matched) {
+                         setSelectedCompanyId(matched.id)
+                     } else {
+                         // If name doesn't match an ID (unlikely if data is consistent), 
+                         // we might just leave dropdown unselected or handle custom input.
+                         // For now, we assume standard flow.
+                         setSelectedCompanyId('')
+                     }
+                }
+            } catch (error) {
+                console.error('Failed to fetch companies:', error)
+                toast.error('Failed to load insurance companies')
+            } finally {
+                setLoadingCompanies(false)
+            }
+        }
+
+        if (isOpen) {
+            fetchCompanies()
+        }
+    }, [productCategory, isOpen, insurerName])
+
 
     const router = useRouter()
 
@@ -111,6 +155,19 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
         if (fileInput) fileInput.value = ''
     }
 
+    const handleCompanyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const newId = e.target.value
+        setSelectedCompanyId(newId)
+        
+        // Find name
+        const company = companies.find(c => c.id === newId)
+        if (company) {
+            setInsurerName(company.name)
+        } else {
+            setInsurerName('')
+        }
+    }
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
 
@@ -118,9 +175,10 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
         const formErrors: string[] = []
 
         if (!productName.trim()) formErrors.push('Product name is required')
+        if (!productCategory) formErrors.push('Product category is required')
         if (!productType) formErrors.push('Product type is required')
-        if (!insurer.trim()) formErrors.push('Insurance company is required')
-        if (!isEdit && !pdfFile) formErrors.push('PDF file is required')
+        if (!insurerName.trim()) formErrors.push('Insurance company is required')
+        // if (!isEdit && !pdfFile) formErrors.push('PDF file is required') // Removed required check
 
         if (formErrors.length > 0) {
             setErrors(formErrors)
@@ -156,7 +214,6 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
                 product_category: productType as 'General' | 'Health' | 'Life',
                 insurer,
                 description: description || undefined,
-                features: '',
                 // Use the new URL if uploaded, or the existing one (unless it was cleared)
                 pdf_url: pdfFile ? (pdfUrl || null) : (existingPdfUrl || null),
                 pdf_filename: pdfFile ? (pdfFilename || null) : (existingPdfName || null),
@@ -189,8 +246,10 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
 
             // Reset form
             setProductName('')
+            setProductCategory('')
             setProductType('')
-            setInsurer('')
+            setInsurerName('')
+            setSelectedCompanyId('')
 
             setDescription('')
             setPdfFile(null)
@@ -260,38 +319,67 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
                         />
                     </div>
 
-                    {/* Product Type & Insurer */}
+                    {/* Product Category & Product Type */}
                     <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">
+                                Product Category <span className="text-red-500">*</span>
+                            </label>
+                            <select
+                                value={productCategory}
+                                onChange={(e) => {
+                                    setProductCategory(e.target.value as 'General' | 'Health' | 'Life' | '')
+                                    // Reset insurer when type changes if that logic is desired, currently we reset it
+                                    setSelectedCompanyId('')
+                                    setInsurerName('')
+                                }}
+                                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                required
+                            >
+                                <option value="">Select Category</option>
+                                <option value="General">General</option>
+                                <option value="Health">Health</option>
+                                <option value="Life">Life</option>
+                            </select>
+                        </div>
                         <div>
                             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">
                                 Product Type <span className="text-red-500">*</span>
                             </label>
                             <select
                                 value={productType}
-                                onChange={(e) => setProductType(e.target.value as 'General' | 'Health' | 'Life' | '')}
+                                onChange={(e) => setProductType(e.target.value)}
                                 className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 required
                             >
                                 <option value="">Select Type</option>
-                                <option value="General">General</option>
+                                <option value="Vehicle">Vehicle</option>
                                 <option value="Health">Health</option>
                                 <option value="Life">Life</option>
+                                <option value="Others">Others</option>
                             </select>
                         </div>
+                    </div>
 
-                        <div>
-                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">
-                                Insurance Company <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="text"
-                                value={insurer}
-                                onChange={(e) => setInsurer(e.target.value)}
-                                placeholder="e.g., HDFC ERGO"
-                                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                required
-                            />
-                        </div>
+                     {/* Insurer */}
+                     <div>
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">
+                            Insurance Company <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                            value={selectedCompanyId}
+                            onChange={handleCompanyChange}
+                            disabled={!productCategory || loadingCompanies}
+                            className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-100 disabled:text-slate-400"
+                            required
+                        >
+                            <option value="">
+                                {loadingCompanies ? 'Loading...' : (productCategory ? 'Select Company' : 'Select Category First')}
+                            </option>
+                            {companies.map(comp => (
+                                <option key={comp.id} value={comp.id}>{comp.name}</option>
+                            ))}
+                        </select>
                     </div>
 
 
@@ -312,7 +400,7 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
                     {/* PDF Upload */}
                     <div>
                         <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">
-                            {isEdit ? 'Update PDF (Optional)' : 'Upload PDF'} {!isEdit && <span className="text-red-500">*</span>}
+                            {isEdit ? 'Update PDF' : 'Upload PDF'}
                         </label>
                         <div className="relative border-2 border-dashed border-slate-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
                             <input
@@ -321,7 +409,6 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
                                 onChange={handleFileChange}
                                 className="hidden"
                                 id="pdf-upload"
-                                required={!isEdit && !pdfFile && !existingPdfUrl}
                             />
 
                             {(pdfFile || existingPdfUrl) ? (

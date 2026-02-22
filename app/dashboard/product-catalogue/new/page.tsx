@@ -13,7 +13,6 @@ export default function NewProductPage() {
         name: '',
         product_category: 'General',
         insurer: '',
-        features: '',
         description: '',
     })
 
@@ -55,10 +54,10 @@ export default function NewProductPage() {
                     />
                 </div>
 
-                {/* Category */}
+                {/* Product Category */}
                 <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">
-                        Category <span className="text-red-500">*</span>
+                        Product Category <span className="text-red-500">*</span>
                     </label>
                     <select
                         required
@@ -101,17 +100,17 @@ export default function NewProductPage() {
                     />
                 </div>
 
-                {/* Features */}
+                {/* Product Type */}
                 <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">
-                        Features (comma-separated)
+                        Product Type
                     </label>
                     <input
                         type="text"
-                        value={formData.features}
-                        onChange={(e) => setFormData({ ...formData, features: e.target.value })}
+                        value={formData.product_type}
+                        onChange={(e) => setFormData({ ...formData, product_type: e.target.value })}
                         className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="e.g., Zero Depreciation, Roadside Assistance, NCB Protection"
+                        placeholder="e.g., Vehicle, Term Life, Individual Health"
                     />
                 </div>
 

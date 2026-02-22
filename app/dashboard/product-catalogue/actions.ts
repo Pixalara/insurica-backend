@@ -65,6 +65,7 @@ export async function uploadProductPDF(formData: FormData) {
 export async function getProducts(filters?: {
   query?: string
   category?: string
+  insurer?: string
 }) {
   const supabase = await createClient()
   
@@ -81,6 +82,7 @@ export async function getProducts(filters?: {
     query = query.or(`name.ilike.%${filters.query}%,insurer.ilike.%${filters.query}%`)
   }
   
+  // Note: frontend might still send 'category' filter, we map it to 'product_category' column
   if (filters?.category && filters.category !== 'All') {
     query = query.eq('product_category', filters.category)
   }

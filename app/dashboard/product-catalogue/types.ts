@@ -3,7 +3,6 @@ export interface Product {
   name: string
   product_category: 'General' | 'Health' | 'Life'
   insurer: string
-  features?: string[]
   description?: string
   pdf_url?: string
   pdf_filename?: string
@@ -16,7 +15,6 @@ export interface ProductFormData {
   name: string
   product_category: 'General' | 'Health' | 'Life'
   insurer: string
-  features?: string
   description?: string
   pdf_url?: string | null
   pdf_filename?: string | null

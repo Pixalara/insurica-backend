@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import Link from 'next/link'
-import { Customer, Policy } from '../types'
+import { Customer } from '../types'
 import { deleteCustomer } from '../actions'
 import { ChevronDown, ChevronUp, Edit, Trash2, ExternalLink } from 'lucide-react'
 import { toast } from 'sonner'

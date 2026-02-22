@@ -27,15 +27,6 @@ export function ProductTable({ products }: ProductTableProps) {
         setDeleting(null)
     }
 
-    const formatCurrency = (val?: number) => {
-        if (!val) return '-'
-        return new Intl.NumberFormat('en-IN', {
-            style: 'currency',
-            currency: 'INR',
-            maximumFractionDigits: 0
-        }).format(val)
-    }
-
     if (products.length === 0) {
         return (
             <div className="bg-white rounded-xl border border-slate-200 p-12 text-center">

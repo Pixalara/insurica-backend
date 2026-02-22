@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Upload, Package, Shield, HeartPulse, Users, FileText, Download, Share2, Pencil, Trash2 } from 'lucide-react'
 import { ProductModal } from './product-modal'
 import { deleteProduct } from '../actions'
+import { getCompanies } from '../../clients/actions'
 import { toast } from 'sonner'
 import type { Product } from '../types'
 
