@@ -18,14 +18,8 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
     const isEdit = !!product
 
     const [productName, setProductName] = useState(product?.name || '')
-    const [productCategory, setProductCategory] = useState<'General' | 'Health' | 'Life' | ''>(product?.product_category || '')
-    const [productType, setProductType] = useState<'Vehicle' | 'Health' | 'Life' | 'Others' | string>(product?.product_type || '')
-    
-    // Insurer State
-    const [companies, setCompanies] = useState<{ id: string; name: string }[]>([])
-    const [selectedCompanyId, setSelectedCompanyId] = useState('')
-    const [insurerName, setInsurerName] = useState(product?.insurer || '')
-    const [loadingCompanies, setLoadingCompanies] = useState(false)
+    const [productType, setProductType] = useState<'General' | 'Health' | 'Life' | ''>(product?.product_category || '')
+    const [insurer, setInsurer] = useState(product?.insurer || '')
 
     const [description, setDescription] = useState(product?.description || '')
     const [pdfFile, setPdfFile] = useState<File | null>(null)
@@ -39,10 +33,9 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
     useEffect(() => {
         if (product) {
             setProductName(product.name)
-            setProductCategory(product.product_category)
-            setProductType(product.product_type || '')
-            setInsurerName(product.insurer)
-            
+            setProductType(product.product_category)
+            setInsurer(product.insurer)
+
             setDescription(product.description || '')
             setExistingPdfUrl(product.pdf_url || '')
             setExistingPdfName(product.pdf_filename || '')
@@ -218,9 +211,8 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
 
             const formData = {
                 name: productName,
-                product_category: productCategory as 'General' | 'Health' | 'Life',
-                product_type: productType,
-                insurer: insurerName, // Storing the name
+                product_category: productType as 'General' | 'Health' | 'Life',
+                insurer,
                 description: description || undefined,
                 // Use the new URL if uploaded, or the existing one (unless it was cleared)
                 pdf_url: pdfFile ? (pdfUrl || null) : (existingPdfUrl || null),

@@ -9,7 +9,7 @@ export default async function ProductCataloguePage({
     const params = await searchParams
     const { query, category, insurer } = params
 
-    const { products, totalCount } = await getProducts({
+    const { products, totalCount, errorMessage } = await getProducts({
         query,
         category: category !== 'All' ? category : undefined,
     })
@@ -26,6 +26,7 @@ export default async function ProductCataloguePage({
             initialQuery={query || ''}
             initialCategory={category || 'All'}
             initialInsurer={insurer || 'All'}
+            errorMessage={errorMessage}
         />
     )
 }

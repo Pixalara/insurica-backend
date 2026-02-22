@@ -12,7 +12,6 @@ export default function NewProductPage() {
     const [formData, setFormData] = useState<ProductFormData>({
         name: '',
         product_category: 'General',
-        product_type: '',
         insurer: '',
         description: '',
     })

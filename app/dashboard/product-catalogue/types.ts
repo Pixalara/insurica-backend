@@ -2,7 +2,6 @@ export interface Product {
   id: string
   name: string
   product_category: 'General' | 'Health' | 'Life'
-  product_type?: 'Vehicle' | 'Health' | 'Life' | 'Others' | string
   insurer: string
   description?: string
   pdf_url?: string
@@ -15,7 +14,6 @@ export interface Product {
 export interface ProductFormData {
   name: string
   product_category: 'General' | 'Health' | 'Life'
-  product_type: 'Vehicle' | 'Health' | 'Life' | 'Others' | string
   insurer: string
   description?: string
   pdf_url?: string | null
