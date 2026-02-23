@@ -75,7 +75,7 @@ export async function getProducts(filters?: {
   let query = supabase
     .from('products')
     .select('*', { count: 'exact' })
-    .order('created_at', { ascending: false })
+    .order('name', { ascending: true })
 
   // Apply filters
   if (filters?.query) {

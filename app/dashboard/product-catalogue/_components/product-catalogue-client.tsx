@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Upload, Package, Shield, HeartPulse, Users, FileText, Download, Share2, Pencil, Trash2 } from 'lucide-react'
+import { Upload, Package, Shield, HeartPulse, Users, FileText, Download, Share2, Pencil, Trash2, ChevronDown, ChevronRight } from 'lucide-react'
 import { ProductModal } from './product-modal'
 import { deleteProduct } from '../actions'
 import { getCompanies } from '../../clients/actions'
@@ -58,7 +58,19 @@ export function ProductCatalogueClient({
     const [editingProduct, setEditingProduct] = useState<Product | null>(null)
     const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
     const [isDeleting, setIsDeleting] = useState(false)
+    const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+        General: true,
+        Life: true,
+        Health: true
+    })
     const router = useRouter()
+
+    const toggleSection = (sectionKey: string) => {
+        setExpandedSections(prev => ({
+            ...prev,
+            [sectionKey]: !prev[sectionKey]
+        }))
+    }
 
     const handleEdit = (product: Product) => {
         setEditingProduct(product)
@@ -155,104 +167,131 @@ export function ProductCatalogueClient({
             {SECTIONS.map((section) => {
                 const sectionProducts = products.filter((p) => p.product_category === section.key)
                 const SectionIcon = section.icon
+                const isExpanded = expandedSections[section.key]
 
                 return (
                     <div key={section.key} className="space-y-3">
                         {/* Section Header */}
-                        <div className={`${section.headerBg} rounded-xl px-5 py-4 flex items-center justify-between shadow-sm`}>
+                        <button
+                            onClick={() => toggleSection(section.key)}
+                            className={`w-full ${section.headerBg} rounded-xl px-5 py-4 flex items-center justify-between shadow-sm hover:opacity-95 transition-all active:scale-[0.99]`}
+                        >
                             <div className="flex items-center gap-3">
                                 <div className="bg-white/20 p-2 rounded-lg">
                                     <SectionIcon className="w-5 h-5 text-white" />
                                 </div>
                                 <h2 className="text-lg font-bold text-white">{section.label}</h2>
                             </div>
-                            <span className="bg-white/20 text-white text-xs font-bold px-3 py-1 rounded-full">
-                                {sectionProducts.length} {sectionProducts.length === 1 ? 'Product' : 'Products'}
-                            </span>
-                        </div>
+                            <div className="flex items-center gap-3">
+                                <span className="bg-white/20 text-white text-xs font-bold px-3 py-1 rounded-full">
+                                    {sectionProducts.length} {sectionProducts.length === 1 ? 'Product' : 'Products'}
+                                </span>
+                                {isExpanded ? (
+                                    <ChevronDown className="w-5 h-5 text-white/70" />
+                                ) : (
+                                    <ChevronRight className="w-5 h-5 text-white/70" />
+                                )}
+                            </div>
+                        </button>
 
                         {/* PDF List */}
-                        {sectionProducts.length > 0 ? (
-                            <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden divide-y divide-slate-100">
-                                {sectionProducts.map((product) => (
-                                    <div
-                                        key={product.id}
-                                        className="flex items-center gap-4 px-5 py-4 hover:bg-slate-50 transition-colors"
-                                    >
-                                        {/* PDF Icon */}
-                                        <div className={`shrink-0 w-10 h-10 rounded-lg flex items-center justify-center ${product.pdf_url
-                                            ? 'bg-red-50 text-red-500'
-                                            : 'bg-slate-100 text-slate-400'
-                                            }`}>
-                                            <FileText className="w-5 h-5" />
-                                        </div>
+                        {isExpanded && (
+                            <>
+                                {sectionProducts.length > 0 ? (
+                                    <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden divide-y divide-slate-100">
+                                        {sectionProducts.map((product) => (
+                                            <div
+                                                key={product.id}
+                                                className="flex items-center gap-4 px-5 py-4 hover:bg-slate-50 transition-colors"
+                                            >
+                                                {/* PDF Icon */}
+                                                <div className={`shrink-0 w-10 h-10 rounded-lg flex items-center justify-center ${product.pdf_url
+                                                    ? 'bg-red-50 text-red-500'
+                                                    : 'bg-slate-100 text-slate-400'
+                                                    }`}>
+                                                    <FileText className="w-5 h-5" />
+                                                </div>
 
-                                        {/* Product Info */}
-                                        <div className="flex-1 min-w-0">
-                                            <h3 className="font-semibold text-slate-900 text-sm truncate">
-                                                {product.name}
-                                            </h3>
-                                            <p className="text-xs text-slate-500 mt-0.5">
-                                                {product.insurer}
-                                                {product.pdf_filename && (
-                                                    <span className="text-slate-400"> · {product.pdf_filename}</span>
-                                                )}
-                                            </p>
-                                        </div>
+                                                {/* Product Info */}
+                                                <div className="flex-1 min-w-0">
+                                                    <h3 className="font-semibold text-slate-900 text-sm truncate">
+                                                        {product.name}
+                                                    </h3>
+                                                    <p className="text-xs text-slate-500 mt-0.5">
+                                                        {product.insurer}
+                                                        {product.pdf_filename && (
+                                                            <span className="text-slate-400"> · {product.pdf_filename}</span>
+                                                        )}
+                                                    </p>
+                                                </div>
 
-                                        {/* Actions */}
-                                        <div className="flex items-center gap-1.5 shrink-0">
-                                            {product.pdf_url ? (
-                                                <>
-                                                    <a
-                                                        href={product.pdf_url}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
-                                                    >
-                                                        View PDF
-                                                    </a>
+                                                {/* Actions */}
+                                                <div className="flex items-center gap-1.5 shrink-0">
+                                                    {product.pdf_url ? (
+                                                        <>
+                                                            <a
+                                                                href={product.pdf_url}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+                                                            >
+                                                                View PDF
+                                                            </a>
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation()
+                                                                    handleDownload(product)
+                                                                }}
+                                                                className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                                title="Download"
+                                                            >
+                                                                <Download className="w-4 h-4" />
+                                                            </button>
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation()
+                                                                    handleWhatsAppShare(product)
+                                                                }}
+                                                                className="p-1.5 text-slate-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                                                                title="Share via WhatsApp"
+                                                            >
+                                                                <Share2 className="w-4 h-4" />
+                                                            </button>
+                                                        </>
+                                                    ) : (
+                                                        <span className="text-xs text-slate-400 italic">No PDF</span>
+                                                    )}
                                                     <button
-                                                        onClick={() => handleDownload(product)}
-                                                        className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                                        title="Download"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation()
+                                                            handleEdit(product)
+                                                        }}
+                                                        className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+                                                        title="Edit"
                                                     >
-                                                        <Download className="w-4 h-4" />
+                                                        <Pencil className="w-3.5 h-3.5" />
                                                     </button>
                                                     <button
-                                                        onClick={() => handleWhatsAppShare(product)}
-                                                        className="p-1.5 text-slate-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                                                        title="Share via WhatsApp"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation()
+                                                            setConfirmDeleteId(product.id)
+                                                        }}
+                                                        className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                        title="Delete"
                                                     >
-                                                        <Share2 className="w-4 h-4" />
+                                                        <Trash2 className="w-3.5 h-3.5" />
                                                     </button>
-                                                </>
-                                            ) : (
-                                                <span className="text-xs text-slate-400 italic">No PDF</span>
-                                            )}
-                                            <button
-                                                onClick={() => handleEdit(product)}
-                                                className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
-                                                title="Edit"
-                                            >
-                                                <Pencil className="w-3.5 h-3.5" />
-                                            </button>
-                                            <button
-                                                onClick={() => setConfirmDeleteId(product.id)}
-                                                className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                                title="Delete"
-                                            >
-                                                <Trash2 className="w-3.5 h-3.5" />
-                                            </button>
-                                        </div>
+                                                </div>
+                                            </div>
+                                        ))}
                                     </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-8 text-center">
-                                <Package className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                                <p className="text-sm text-slate-400">{section.emptyText}</p>
-                            </div>
+                                ) : (
+                                    <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-8 text-center">
+                                        <Package className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                                        <p className="text-sm text-slate-400">{section.emptyText}</p>
+                                    </div>
+                                )}
+                            </>
                         )}
                     </div>
                 )
