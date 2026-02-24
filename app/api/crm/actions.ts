@@ -390,7 +390,7 @@ export async function getProductsCatalogue(filters?: {
     let query = supabase
         .from('products')
         .select('*', { count: 'exact' })
-        .order('created_at', { ascending: false })
+        .order('name', { ascending: true })
 
     if (filters?.product_type && filters.product_type !== 'All') {
         query = query.eq('category', filters.product_type)
